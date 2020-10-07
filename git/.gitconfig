@@ -1,0 +1,10 @@
+[user]
+	name=Brian Chrzanowski
+	email=chrzanowskitest@gmail.com
+[push]
+	default=simple
+[merge]
+	too=vimdiff
+[credential]
+	helper=cache
+
