@@ -64,3 +64,9 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
+# MACHINE SPECIFIC SETTINGS
+# - settings for the current machine we're working on
+if [ -f ~/.bash_machine ]; then
+	. ~/.bash_machine
+fi
+

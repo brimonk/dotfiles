@@ -32,3 +32,7 @@ alias gdb='gdb -q'
 # shutdown the nc network socket after EOF
 alias nc="nc -N"
 
+function gr {
+	cd "$(git root)"
+}
+

@@ -1,6 +1,4 @@
 " Brian Chrzanowski
-" 2020-10-07 12:27:42
-"
 " Vim RC
 " TODO clean - this file's a mess
 
@@ -13,15 +11,15 @@ set history=500
 filetype plugin on
 filetype indent on
 
-set autoread " update file when modified outside of vim
+set autoread
 
-" With a map leader it's possible to do extra key combinations
+" space and comma to be leader (muscle memory is a bitch)
 let mapleader = ","
 let g:mapleader = ","
 nmap <Space> ,
 
-nmap <leader>w :w!<cr>
 " Fast saving
+nmap <leader>w :w!<cr>
 
 set timeoutlen=5000
 " :W sudo saves the file 
@@ -66,7 +64,7 @@ set laststatus=2 " Always show the status line
 " Format the status line
 set statusline=%<%f%h%m%r%=%{&ff}\ %l\ %c\ %P
 
-set textwidth=100
+set textwidth=0
 
 " --
 " Section: Colors and Fonts
@@ -77,11 +75,11 @@ syntax enable
 syntax on
 
 if has("win32") " handle the GUI font
-	" set guifont=Courier_New:h12
-	set guifont=Liberation_Mono:h10
+	set guifont=Courier_New:h14
 else
 	set guifont=FreeMono\ 12
 end
+
 
 colorscheme default
 
@@ -163,19 +161,41 @@ au BufEnter *.asm set cindent
 " Better Markdown Behavior
 autocmd BufRead,BufNewFile *.markdown,*.mdown,*.mkd,*.mkdn,*.md  setf markdown
 
-" Better GNU Octave Behavior
-augroup filetypedetect 
-  au! BufRead,BufNewFile *.m,*.oct set filetype=octave 
-augroup END 
-autocmd FileType octave setlocal keywordprg=info\ octave\ --vi-keys\ --index-search
+" work - indentation
+autocmd BufRead,BufNewFile *.css  setlocal shiftwidth=4 softtabstop=4 expandtab
+autocmd BufRead,BufNewFile *.html setlocal shiftwidth=4 softtabstop=4 expandtab
+
+" work - cs
+autocmd BufRead,BufNewFile *.cs setlocal shiftwidth=4 softtabstop=4 expandtab
+autocmd BufRead,BufNewFile *.cs setlocal cindent
+autocmd BufRead,BufNewFile *.cs setlocal fo+=ro
+autocmd BufRead,BufNewFile *.cs setlocal cinoptions=j1,J1,(1s
+
+" SQL
+autocmd BufRead,BufNewFile *.sql setlocal shiftwidth=4 softtabstop=4 expandtab
+autocmd BufRead,BufNewFile *.sql setlocal cindent
+autocmd BufRead,BufNewFile *.sql setlocal fo+=ro
+autocmd BufRead,BufNewFile *.sql setlocal cinoptions+=j1,J1,(1s
+
+" work - ts
+autocmd BufRead,BufNewFile *.ts setlocal shiftwidth=4 softtabstop=4 expandtab
+autocmd BufRead,BufNewFile *.ts setlocal cindent
+autocmd BufRead,BufNewFile *.ts setlocal fo+=ro
+autocmd BufRead,BufNewFile *.ts setlocal cinoptions=j1,J1,(1s
+
+" work - js
+autocmd BufRead,BufNewFile *.js setlocal shiftwidth=4 softtabstop=4 expandtab
+autocmd BufRead,BufNewFile *.js setlocal cindent
+autocmd BufRead,BufNewFile *.js setlocal fo+=ro
+autocmd BufRead,BufNewFile *.ts setlocal cinoptions=j1,J1,(1s
+
+" Honestly, webdev isn't all that bad...
+autocmd BufRead,BufNewFile *.ejs  set filetype=html
 
 " TOML File Syntax Highlighting
 augroup filetypedetect 
   au! BufRead,BufNewFile *.toml set filetype=toml 
 augroup END 
-
-" we want to be able to use help if we're somehow editing a **matlab** file
-autocmd FileType matlab setlocal keywordprg=info\ octave\ --vi-keys\ --index-search
 
 " --
 " Section: Navigation
