@@ -81,7 +81,7 @@ else
 end
 
 
-colorscheme default
+colorscheme desert
 
 " create an indicator at 80 chars
 set colorcolumn=80,100
@@ -124,10 +124,9 @@ set nowrap " DO NOT WRAP LINES
 " Bash Settings
 
 " Better C Syntax Handling
-au BufEnter *.[ch] set cindent
-au BufEnter *.[ch] set fo+=ro
-au BufEnter *.cu set cindent
-au BufEnter *.cu set fo+=ro
+au BufEnter,BufRead,BufNewFile *.[ch] set cindent
+au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro
+au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,:0,l1
 
 " If we're working in C#, Typescript, HTML, or CSS, set the company
 " tab settings so we don't make anyone angry in a PR

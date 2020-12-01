@@ -20,6 +20,7 @@
     cm=commit -m
     cam=commit -a -m
     m=commit --amend --verbose
+	citrigger=commit --allow-empty -a -m "[empty] trigger ci"
 
     d=diff
     ds=diff --stat
