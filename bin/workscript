@@ -60,7 +60,7 @@ function reap
 # clearstate : clears the build(s) state
 function clearstate
 {
-	rm $BUILDSTATE
+	rm -f $BUILDSTATE
 	touch $BUILDSTATE
 }
 
@@ -106,7 +106,7 @@ function buildall
 
 	CURRHASH=$(git rev-parse HEAD)
 
-	if ( ! hasstatestr $CURRHASH ); then
+	if [ ! -f "$BUILDSTATE" ] || ( ! hasstatestr $CURRHASH ); then
 		clearstate
 		addstatestr "$CURRHASH"
 	fi
@@ -115,11 +115,11 @@ function buildall
 
 	while IFS= read -r line;
 	do
-		echo $line;
-
 		bcmd=$(echo "$line" | awk -F';' '{print $1}')
 		bstr=$(echo "$line" | awk -F';' '{print $2}')
 		bdir=$(echo "$line" | awk -F';' '{print $3}')
+
+		[ -z "$bcmd" ] || [ -z "$bstr" ] || [ -z "$bdir" ] && continue
 
 		if ( ! hasstatestr "$bstr" ); then
 			pushd $bdir
@@ -197,6 +197,12 @@ function newdb
 		cname=$(echo "$line" | awk -F';' '{print $1}')
 		cport=$(echo "$line" | awk -F';' '{print $2}')
 		cremote=$(echo "$line" | awk -F';' '{print $3}')
+
+		# we skip over lines that aren't formatted properly
+		# if you have a funky issue, my guess is it's here
+		[ -z "$cname" ] && continue
+		[ -z "$cport" ] && continue
+		[ -z "$cremote" ] && continue
 
 		resetcontainer "$cname" "$cport" "$cremote"
 	done < "$CONTAINERFILE"
