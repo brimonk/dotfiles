@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+[ -z "$EDITOR" ] && EDITOR="vim"
+
+while read -u 3 line
+do
+	$EDITOR "$line"
+	wait
+done 3< "${1:-/dev/stdin}"
+

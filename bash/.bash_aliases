@@ -33,6 +33,7 @@ alias gdb='gdb -q'
 alias nc="nc -N"
 
 function gr {
-	cd "$(git root)"
+	DIR="$(git root)"
+	[[ ! -z "$DIR" ]] && cd "$DIR"
 }
 
