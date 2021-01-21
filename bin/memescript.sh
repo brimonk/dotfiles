@@ -7,6 +7,12 @@
 # NOTE (Brian)
 # jq is cool, but different than like, every other shell utility, rip
 
+# usage : prints usage info
+function usage
+{
+	echo "memescript.sh --meme 'template name' --top 'top text here' --bottom 'bottom text here'"
+}
+
 if [ "$#" -eq 0 ]; then
 	usage
 fi
