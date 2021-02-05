@@ -11,8 +11,8 @@
 [merge]
 	# for help with this, read https://stackoverflow.com/questions/161813/how-to-resolve-merge-conflicts-in-git-repository
 	tool=vimdiff
-	conflictsytle="diff3"
-	prompt=false
+	conflictsytle=diff
+	prompt=true
 
 [alias]
     # one-line log
@@ -34,7 +34,7 @@
 	currname=rev-parse --abbrev-ref HEAD
 
 	# fetch, merge master into current branch, push to origin branch
-	goalpost="!git fetch; git pull --commit origin master && git push origin HEAD"
+	goalpost="!git fetch; git pull --commit origin master ; git mergetool --prompt && git clean -f . && git commit -a && git push origin HEAD"
 
 	# diff commands
     d=diff

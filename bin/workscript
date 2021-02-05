@@ -137,6 +137,62 @@ function buildall
 	popd # $(gr)
 }
 
+# trigger : triggers builds, but really just shits on Jenkins
+function trigger
+{
+	# TODO (Brian) make into a generic "rebuild all fails" for any org-user/project
+	# NOTE (Brian) we're probably going to want to put in an allowlist/blocklist
+	# to make sure we don't trample over everyone else's PRs
+	#
+	# We need to pull out the
+	# - user   (user.login)
+	# - branch (head.ref)
+	# - sha    (head.sha)
+	# - status
+
+	# curl --user "brimonk:$GITHUB_PAT" \
+	#     -H "Accept: application/vnd.github.v3+json" \
+	#     "https://api.github.com/repos/kunzleigh/water/statuses/b9ed6487fb852bf310f389dad60d8e5ae1641f4a" | \
+	#     jq -r ".[0].state"
+
+	# curl --user "brimonk:$GITHUB_PAT" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/kunzleigh/water/pulls?state=open" | less
+
+	mkdir -p "$HOME/.tmp"
+	pushd "$HOME/.tmp"
+
+	if [ ! -d "waterbuild/" ]; then
+		git clone "https://github.com/kunzleigh/water" waterbuild
+	fi
+
+	cd "waterbuild/"
+
+	git fetch
+
+	PULLDATA=$(curl -s --user "brimonk:$GITHUB_PAT" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/kunzleigh/water/pulls?state=open")
+	# echo "$PULLDATA"
+
+	PULLS=$(echo "$PULLDATA" | jq -r '.[] | {user: .user.login, ref: .head.ref} | "\(.user)\t\(.ref)"')
+	# echo "$PULLS"
+
+	while IFS= read -r v; do
+		USER=$(echo $v | awk '{print $1}')
+		BRANCH=$(echo $v | awk '{print $2}')
+		STATUSDATA=$(curl -s --user "brimonk:$GITHUB_PAT" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/kunzleigh/water/commits/$BRANCH/statuses")
+		STATUS=$(echo "$STATUSDATA" | jq -r '.[0].state')
+
+		# TODO (Brian) read from the allow list of users here
+		if [ "$STATUS" = "failure" ] && [ "$USER" = "brimonk" ]; then
+			echo "TRIGGERING BUILD FOR '$BRANCH'"
+			git checkout "origin/$BRANCH" -b "$BRANCH"
+			git tb
+			git checkout master
+			git branch -D "$BRANCH"
+		fi
+	done <<< "$PULLS"
+
+	popd
+}
+
 # update : updates the database to the most recent version
 function update
 {
@@ -236,6 +292,9 @@ do
 		;;
 		"buildall")
 			buildall
+		;;
+		"trigger")
+			trigger
 		;;
 		"reap")
 			reap

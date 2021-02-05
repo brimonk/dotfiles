@@ -211,8 +211,13 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " navigating buffers
-map <leader>e :bnext<cr>
-map <leader>q :bprevious<cr>
+map <leader>e   :bnext<cr>
+map <leader>q   :bprevious<cr>
+
+" mapping for vimdiff, getting remote and local changes
+map <leader>r  :diffget REMOTE<cr>
+map <leader>l  :diffget LOCAL<cr>
+map <leader>b  :diffget BASE<cr>
 
 " Specify the behavior when switching between buffers 
 try
@@ -248,7 +253,7 @@ nmap <leader>v :vsplit!<cr>
 nmap <leader>o :only!<cr>
 
 " binds to auto-reload my vimrc (useful when reprogramming some vim junk)
-nmap <leader>r :source $MYVIMRC<cr>
+" nmap <leader>r :source $MYVIMRC<cr>
 
 " set some gui options
 set guioptions=m " remove menu bar

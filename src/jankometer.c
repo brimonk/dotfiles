@@ -23,26 +23,32 @@
  * (ends without a closing thing)
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#define COMMON_IMPLEMENTATION
+#include "common.h"
 
 #include <unistd.h>
 #include <errno.h>
 
 #define TEMPLATE_PATH ("JUNKOMETER_REVIEWMSG")
+#define DB_PATH ("$HOME/.jankdb")
 
 struct rating_t {
 	char *author_name;
 	char *author_email;
 	char *comment;
+	struct tm tm;
 	int value;
 };
 
-struct file_t {
+typedef struct file_t {
+	char *repo;
 	char *path;
-};
+	MK_RESIZE_ARR(struct rating_t, ratings);
+} file_t;
+
+typedef struct repo_t {
+	MK_RESIZE_ARR(struct file_t, files);
+} repo_t;
 
 // WriteTemplate : writes the template file
 int WriteTemplate(char *path);
