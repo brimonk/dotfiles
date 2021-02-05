@@ -8,6 +8,12 @@
 [core]
 	pager="less -R"
 
+[merge]
+	# for help with this, read https://stackoverflow.com/questions/161813/how-to-resolve-merge-conflicts-in-git-repository
+	tool=vimdiff
+	conflictsytle="diff3"
+	prompt=false
+
 [alias]
     # one-line log
     l=log --graph --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short
@@ -20,8 +26,17 @@
     cm=commit -m
     cam=commit -a -m
     m=commit --amend --verbose
-	citrigger=commit --allow-empty -a -m "[empty] trigger ci"
 
+	# company's ci is "interesting"
+	tb="!git commit -m 'Trigger Build' --allow-empty && git push origin HEAD"
+
+	# get the current branch name
+	currname=rev-parse --abbrev-ref HEAD
+
+	# fetch, merge master into current branch, push to origin branch
+	goalpost="!git fetch; git pull --commit origin master && git push origin HEAD"
+
+	# diff commands
     d=diff
     ds=diff --stat
     dc=diff --cached
@@ -31,9 +46,11 @@
     s=status -s
     co=checkout
     cob=checkout -b
+
     # list branches sorted by last modified
     b="!git for-each-ref --sort='-authordate' --format='%(HEAD)%09%(authordate)%09%(objectname:short)%09%(refname)' refs/heads | sed -e 's-refs/heads/--'"
 
+	# git "branch clean"
 	bc="!for b in $(git branch | grep -v '*'); do read -p 'delete "'"$b"'" (Y/N)? ' v ; [ $v = 'y' ] || [ $v = 'Y' ] && git branch -D "$b"; done"
 
     # list aliases
