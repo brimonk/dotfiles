@@ -292,8 +292,6 @@ int CMDReview(struct state_t *state)
 	state->ratings[state->ratings_len].comment = comment;
 	state->ratings[state->ratings_len].score = score;
 
-	printf("User: %s\n", user);
-
 	state->ratings_len++;
 
 	CMDNextFile(state);
@@ -562,6 +560,41 @@ int FindReviewableFiles(struct state_t *state, char *path)
 // WriteDB : writes the jankdb from state
 int WriteDB(struct state_t *state)
 {
+	FILE *fp;
+	int i;
+
+	fp = fopen(DB_PATH, "wb");
+	if (!fp) {
+		return -1;
+	}
+
+	fprintf(fp, "%s\n", MARKER_NOTES);
+	fprintf(fp, "%s\n", state->notes);
+	fprintf(fp, "\n");
+
+	fprintf(fp, "%s\n", MARKER_CONFIG);
+	fprintf(fp, "ReviewGlob: %s\n", state->config.glob);
+	fprintf(fp, "\n");
+
+	for (i = 0; i < state->ratings_len; i++) {
+		fprintf(fp, "%s\n", MARKER_REVIEW);
+
+		fprintf(fp, "AuthorName: %s\n", state->ratings[i].user);
+		fprintf(fp, "AuthorEmail: %s\n", state->ratings[i].email);
+		fprintf(fp, "Timestamp: %s\n", state->ratings[i].time);
+		fprintf(fp, "Score: %d\n", state->ratings[i].score);
+		fprintf(fp, "Path: %s\n", state->ratings[i].path);
+		fprintf(fp, "Hash: %s\n", state->ratings[i].hash);
+
+		fprintf(fp, "\n");
+
+		fprintf(fp, "%s\n", state->ratings[i].comment);
+
+		fprintf(fp, "\n");
+	}
+
+	fclose(fp);
+
 	return 0;
 }
 
