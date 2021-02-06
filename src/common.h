@@ -200,7 +200,13 @@ void c_resize(void *ptr, size_t *len, size_t *cap, size_t bytes)
 	}
 }
 
-/* ltrim : removes whitespace on the "left" (start) of the string */
+// trim : trims the string on the left and right
+char *trim(char *s)
+{
+	return ltrim(rtrim(s));
+}
+
+// ltrim : removes whitespace on the "left" (start) of the string
 char *ltrim(char *s)
 {
 	while (isspace(*s))
@@ -209,7 +215,7 @@ char *ltrim(char *s)
 	return s;
 }
 
-/* rtrim : removes whitespace on the "right" (end) of the string */
+// rtrim : removes whitespace on the "right" (end) of the string
 char *rtrim(char *s)
 {
 	char *e;

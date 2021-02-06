@@ -14,6 +14,8 @@
  *
  * I think the file format should probably look something like this:
  *
+ * TODO (Brian) check if programs are on the computer (which?)
+ *
  * TODO (Brian) Iterate Through Files
  *
  * ============ REVIEWED FILE ================
@@ -32,48 +34,97 @@
 #define TEMPLATE_PATH ("JUNKOMETER_REVIEWMSG")
 #define DB_PATH ("$HOME/.jankdb")
 
+enum REPOTYPE {
+	REPOTYPE_NONE,
+	REPOTYPE_GIT,
+	REPOTYPE_TOTAL
+};
+
 struct rating_t {
 	char *author_name;
 	char *author_email;
 	char *comment;
 	struct tm tm;
-	int value;
+	int score;
+	char *path_from_root;
+	char *commit;
 };
 
-typedef struct file_t {
-	char *repo;
-	char *path;
+struct config_t {
+	char *globs;
+};
+
+struct state_t {
+	struct config_t config;
 	MK_RESIZE_ARR(struct rating_t, ratings);
-} file_t;
+};
 
-typedef struct repo_t {
-	MK_RESIZE_ARR(struct file_t, files);
-} repo_t;
-
-// WriteTemplate : writes the template file
-int WriteTemplate(char *path);
-// RemoveTemplate : removes the template file
-int RemoveTemplate(void);
+// EditReviewMessage : opens the review message in the user's editor
+int EditReviewMessage(void);
+// ReadReviewMessage : reads the review message up to the first "^\s*#"
+char *ReadReviewMessage(void);
+// WriteReviewMessage : writes the template file
+int WriteReviewMessage(char *path);
+// RemoveReviewMessage : removes the template file
+int RemoveReviewMessage(void);
 
 int main(int argc, char **argv)
 {
-	char tbuf[2048];
+	struct state_t state;
+	char *s;
 
-	WriteTemplate("junkometer.c");
-
-	snprintf(tbuf, sizeof tbuf, "$EDITOR %s", TEMPLATE_PATH);
-	system(tbuf);
-
-	snprintf(tbuf, sizeof tbuf, "cat %s", TEMPLATE_PATH);
-	system(tbuf);
-
-	RemoveTemplate();
+	WriteReviewMessage("junkometer.c");
+	EditReviewMessage();
+	s = ReadReviewMessage();
+	printf("Message:\n%s\n", s);
+	free(s);
+	RemoveReviewMessage();
 
 	return 0;
 }
 
-// WriteTemplate : writes the template file
-int WriteTemplate(char *path)
+// ReadDB : reads the jankdb into state
+int ReadJank(struct state_t *state)
+{
+	return 0;
+}
+
+// WriteDB : writes the jankdb from state
+int WriteDB(struct state_t *state)
+{
+	return 0;
+}
+
+// ReadReviewMessage : reads the review message up to the first "^\s*#"
+char *ReadReviewMessage(void)
+{
+	char *s, *t;
+	char *message;
+
+	s = sys_readfile(TEMPLATE_PATH);
+	t = strndup(s, strstr(s, "\n#") - s);
+
+	message = strdup(trim(t));
+
+	free(s);
+	free(t);
+
+	return message;
+}
+
+// EditReviewMessage : opens the review message in the user's editor
+int EditReviewMessage(void)
+{
+	char tbuf[2048];
+
+	snprintf(tbuf, sizeof tbuf, "$EDITOR %s", TEMPLATE_PATH);
+	system(tbuf);
+
+	return 0;
+}
+
+// WriteReviewMessage : writes the template file
+int WriteReviewMessage(char *path)
 {
 	FILE *f;
 
@@ -92,8 +143,8 @@ int WriteTemplate(char *path)
 	return 0;
 }
 
-// RemoveTemplate : removes the template file
-int RemoveTemplate(void)
+// RemoveReviewMessage : removes the template file
+int RemoveReviewMessage(void)
 {
 	remove(TEMPLATE_PATH);
 	return 0;
@@ -102,7 +153,7 @@ int RemoveTemplate(void)
 // CDToGitRoot : changes current working directory to the git root
 int CDToGitRoot(void)
 {
-	// todo fill me out, probably need to use popen or something
+	// TODO (Brian) return -1 if we aren't in a git repo
 	return 0;
 }
 
