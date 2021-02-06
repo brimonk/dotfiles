@@ -4,6 +4,16 @@
  *
  * Junk O Meter
  *
+ * Commands
+ *
+ * - [c]omment
+ * - [e]valuate
+ * - [r]eload database
+ * - [s]kip file
+ * - [v]iew file
+ * - [w]rite database
+ * - [q]uit
+ *
  * TODO (Brian) Main Program
  * 1. iterate over the files that follow a specific expression
  * 2. order to view files we haven't evaluated yet (in eval mode)
@@ -14,11 +24,18 @@
 #define COMMON_IMPLEMENTATION
 #include "common.h"
 
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
+#include <dirent.h>
+#include <regex.h>
 
 #define TEMPLATE_PATH ("JUNKOMETER_REVIEWMSG")
-#define DB_PATH ("/home/brian/.jankdb")
+#define DB_PATH ("/home/brian/.jankdb") // TODO where do we load these from?
 
 // The section marker is enough characters to denote that the line of the
 // file is a marker. Which marker it is is determined by the next three #defs.
@@ -44,7 +61,7 @@ struct rating_t {
 };
 
 struct config_t {
-	char *globs;
+	char *glob;
 };
 
 struct state_t {
@@ -52,10 +69,23 @@ struct state_t {
 	char *notes;
 	struct rating_t *ratings;
 	size_t ratings_len, ratings_cap;
+	char **files;
+	size_t files_len, files_cap;
 };
 
 // ReviewLoop : this is the review loop
 int ReviewLoop(struct state_t *state);
+
+// CMDHelp : help command
+int CMDHelp(struct state_t *state);
+// CMDPrevFile : move the 'currfile' pointer back one
+int CMDPrevFile(struct state_t *state);
+// CMDNextFile : move the 'currfile' pointer forward one
+int CMDNextFile(struct state_t *state);
+// CMDReview : edit the 'currfile'
+int CMDReview(struct state_t *state);
+// CMDViewFile : open the 'currfile' in the user's editor / pager
+int CMDViewFile(struct state_t *state);
 
 // ReadDB : reads the jankdb into state
 int ReadDB(struct state_t *state);
@@ -68,6 +98,9 @@ int ReadDBReview(struct state_t *state, FILE *fp);
 
 // ReadDBToNextMarker : reads the database file up until the next marker, returns the string
 char *ReadDBToNextMarker(FILE *fp);
+
+// FindReviewableFiles : find all reviewable files in the current repo
+int FindReviewableFiles(struct state_t *state, char *path);
 
 // WriteDB : writes the jankdb from state
 int WriteDB(struct state_t *state);
@@ -84,10 +117,12 @@ int WriteReviewMessage(char *path);
 // RemoveReviewMessage : removes the template file
 int RemoveReviewMessage(void);
 
+// GetGitRoot : changes current working directory to the git root
+char *GetGitRoot(void);
+
 int main(int argc, char **argv)
 {
 	struct state_t state;
-	char *s;
 
 	memset(&state, 0, sizeof state);
 
@@ -95,6 +130,70 @@ int main(int argc, char **argv)
 	ReviewLoop(&state);
 	WriteDB(&state);
 	FreeState(&state);
+
+	return 0;
+}
+
+// ReviewLoop : this is the review loop
+int ReviewLoop(struct state_t *state)
+{
+	char *s;
+
+	while ((s = readline("What now? > "))) {
+		if (s[0] == 'q') {
+			break;
+		}
+
+		switch (s[0]) {
+		case 'h': // [h]elp
+			CMDHelp(state);
+			break;
+
+		case 'p': // [p]rev
+			CMDPrevFile(state);
+			break;
+
+		case 'r': // [r]eview
+			CMDReview(state);
+			break;
+
+		case 'v': // [v]iew
+			CMDViewFile(state);
+			break;
+
+		case 'n': // [n]ext
+		case 's': // [s]kip
+			CMDNextFile(state);
+			break;
+
+		default:
+			printf("Unknown command: '%s'\n", s);
+			CMDHelp(state);
+			break;
+		}
+	}
+
+	if (s == NULL)
+		printf("\n");
+
+	return 0;
+}
+
+// CMDPrevFile : move the 'currfile' pointer back one
+int CMDPrevFile(struct state_t *state)
+{
+	return 0;
+}
+
+// CMDNextFile : move the 'currfile' pointer forward one
+int CMDNextFile(struct state_t *state)
+{
+	return 0;
+}
+
+// CMDReview : edit the 'currfile'
+int CMDReview(struct state_t *state)
+{
 
 #if 0
 	WriteReviewMessage("junkometer.c");
@@ -108,9 +207,26 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-// ReviewLoop : this is the review loop
-int ReviewLoop(struct state_t *state)
+// CMDViewFile : open the 'currfile' in the user's editor / pager
+int CMDViewFile(struct state_t *state)
 {
+	return 0;
+}
+
+// CMDHelp : help command
+int CMDHelp(struct state_t *state)
+{
+	puts("*** Commands ***");
+
+	puts("[e]valuate");
+	puts("[n]ext file");
+	puts("[p]rev file");
+	puts("[r]eview");
+	puts("[s]kip file");
+	puts("[v]iew file");
+
+	puts("[q]uit");
+
 	return 0;
 }
 
@@ -140,6 +256,8 @@ int ReadDB(struct state_t *state)
 	}
 
 	fclose(fp);
+
+	FindReviewableFiles(state, NULL);
 
 	return 0;
 }
@@ -187,10 +305,6 @@ int ReadDBReview(struct state_t *state, FILE *fp)
 	s = trim(ReadDBToNextMarker(fp));
 	state->ratings[state->ratings_len].comment = s;
 
-	printf("Path: %s\nComment:\n%s\n",
-		state->ratings[state->ratings_len].path,
-		state->ratings[state->ratings_len].comment);
-
 	state->ratings_len++;
 
 	return 0;
@@ -234,10 +348,10 @@ int ReadDBConfig(struct state_t *state, FILE *fp)
 			continue;
 		}
 
-		v++;
+		v += 2;
 
-		if (strneq(k, "ReviewGlobs")) {
-			state->config.globs = strdup(v);
+		if (strneq(k, "ReviewGlob")) {
+			state->config.glob = strdup(v);
 		}
 	}
 
@@ -250,7 +364,6 @@ char *ReadDBToNextMarker(FILE *fp)
 	char tbuf[BUFLARGE];
 	char *s, *t;
 	size_t s_len, s_cap;
-	fpos_t pos;
 
 	s = t = NULL;
 	s_len = s_cap = 0;
@@ -273,6 +386,81 @@ char *ReadDBToNextMarker(FILE *fp)
 	}
 
 	return s;
+}
+
+// FindReviewableFiles : find all reviewable files in the current repo
+int FindReviewableFiles(struct state_t *state, char *path)
+{
+	DIR *d;
+	struct dirent *dir;
+	regex_t preg;
+	regmatch_t pmatch[16];
+	int rc;
+	char *s, *t;
+	char tbuf[BUFLARGE];
+
+	// TODO (Brian) There's something weird with the posix regex matching in
+	// the file checking. A quick run of it seems to suggest that a match will
+	// have rm_so == 0, and rm_eo != 0, so that's what we're going with for the
+	// moment
+
+	if (path == NULL) { // base case
+		s = GetGitRoot();
+		assert(s);
+		rc = FindReviewableFiles(state, s);
+		free(s);
+		return rc;
+	}
+
+	rc = regcomp(&preg, state->config.glob, REG_EXTENDED);
+	if (rc != 0) {
+		regerror(rc, &preg, tbuf, sizeof tbuf);
+		ERR("Couldn't compile the regular expression [%s]: %s\n", state->config.glob, tbuf);
+		regfree(&preg);
+		return -1;
+	}
+
+	d = opendir(path);
+	if (d == NULL) {
+		printf("ERROR PATH '%s'\n", path);
+		perror("opendir"); // What's the halfway decent way of dealing with this?
+		exit(1);
+	}
+
+	while ((dir = readdir(d)) != NULL) {
+		C_RESIZE(&state->files);
+
+		memset(pmatch, 0, sizeof pmatch);
+
+		if (streq(dir->d_name, ".") || streq(dir->d_name, "..")) {
+			continue;
+		}
+
+		snprintf(tbuf, sizeof tbuf, "%s/%s", path, dir->d_name);
+		s = strdup(tbuf);
+		t = strdup(tbuf);
+
+		switch (dir->d_type) {
+			case DT_REG: { // the other base case
+				rc = regexec(&preg, t, sizeof pmatch, pmatch, 0);
+				if (pmatch[0].rm_so == 0 && pmatch[0].rm_eo != 0) {
+					state->files[state->files_len++] = s;
+				}
+				break;
+			}
+
+			case DT_DIR: { // the recursive case
+				FindReviewableFiles(state, tbuf);
+				break;
+			}
+		}
+	}
+
+	closedir(d);
+
+	regfree(&preg);
+
+	return 0;
 }
 
 // WriteDB : writes the jankdb from state
@@ -342,10 +530,23 @@ int RemoveReviewMessage(void)
 	return 0;
 }
 
-// CDToGitRoot : changes current working directory to the git root
-int CDToGitRoot(void)
+// GetGitRoot : changes current working directory to the git root
+char *GetGitRoot(void)
 {
 	// TODO (Brian) return -1 if we aren't in a git repo
-	return 0;
+	FILE *fp;
+	char tbuf[BUFLARGE];
+	char *s;
+
+	fp = popen("git rev-parse --show-toplevel", "r");
+	if (!fp) {
+		ERR("Couldn't get git root directory!\n");
+		return NULL;
+	}
+
+	fgets(tbuf, sizeof tbuf, fp);
+	s = trim(tbuf);
+
+	return strdup(s);
 }
 
