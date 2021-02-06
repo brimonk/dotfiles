@@ -68,6 +68,9 @@ int ReadDBReview(struct state_t *state, FILE *fp);
 // WriteDB : writes the jankdb from state
 int WriteDB(struct state_t *state);
 
+// FreeState : frees the state object
+int FreeState(struct state_t *state);
+
 // EditReviewMessage : opens the review message in the user's editor
 int EditReviewMessage(void);
 // ReadReviewMessage : reads the review message up to the first "^\s*#"
@@ -83,10 +86,9 @@ int main(int argc, char **argv)
 	char *s;
 
 	ReadDB(&state);
-
 	ReviewLoop(&state);
-
 	WriteDB(&state);
+	FreeState(&state);
 
 #if 0
 	WriteReviewMessage("junkometer.c");
@@ -172,8 +174,6 @@ int ReadDBNotes(struct state_t *state, FILE *fp)
 
 	state->notes = s;
 
-	printf("Notes:\n%s\n", state->notes);
-
 	return 0;
 }
 
@@ -181,12 +181,36 @@ int ReadDBNotes(struct state_t *state, FILE *fp)
 int ReadDBConfig(struct state_t *state, FILE *fp)
 {
 	char tbuf[BUFLARGE];
+	char *s, *k, *v;
+
+	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
+		s = trim(tbuf);
+
+		k = s;
+		v = strchr(s, ':');
+
+		if (v == NULL) { // potentially an error in the config section?
+			continue;
+		}
+
+		v++;
+
+		if (strneq(k, "ReviewGlobs")) {
+			state->config.globs = strdup(v);
+		}
+	}
 
 	return 0;
 }
 
 // WriteDB : writes the jankdb from state
 int WriteDB(struct state_t *state)
+{
+	return 0;
+}
+
+// FreeState : frees the state object
+int FreeState(struct state_t *state)
 {
 	return 0;
 }
