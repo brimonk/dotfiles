@@ -2,7 +2,7 @@
  * Brian Chrzanowski
  * 2021-02-05 01:50:38
  *
- * Junk O Meter
+ * Junk O Meter - Progressively Evaluate the Jankiness of Your Source Tree
  *
  * Commands
  *
@@ -34,7 +34,7 @@
 #include <dirent.h>
 #include <regex.h>
 
-#define TEMPLATE_PATH ("JUNKOMETER_REVIEWMSG")
+#define REVIEW_FILE ("JUNKOMETER_REVIEWMSG")
 #define DB_PATH ("/home/brian/.jankdb") // TODO where do we load these from?
 
 // The section marker is enough characters to denote that the line of the
@@ -51,11 +51,11 @@ enum REPOTYPE {
 };
 
 struct rating_t {
-	char *author_name;
-	char *author_email;
-	char *timestamp;
+	char *user;
+	char *email;
+	char *time;
 	char *path;
-	char *commit;
+	char *hash;
 	char *comment;
 	int score;
 };
@@ -71,6 +71,7 @@ struct state_t {
 	size_t ratings_len, ratings_cap;
 	char **files;
 	size_t files_len, files_cap;
+	int currfile;
 };
 
 // ReviewLoop : this is the review loop
@@ -108,8 +109,8 @@ int WriteDB(struct state_t *state);
 // FreeState : frees the state object
 int FreeState(struct state_t *state);
 
-// EditReviewMessage : opens the review message in the user's editor
-int EditReviewMessage(void);
+// OpenEditor : opens the review message in the user's editor
+int OpenEditor(char *s);
 // ReadReviewMessage : reads the review message up to the first "^\s*#"
 char *ReadReviewMessage(void);
 // WriteReviewMessage : writes the template file
@@ -117,7 +118,21 @@ int WriteReviewMessage(char *path);
 // RemoveReviewMessage : removes the template file
 int RemoveReviewMessage(void);
 
-// GetGitRoot : changes current working directory to the git root
+// RunCommand : runs a command, and returns the result
+char *RunCommand(char *cmd);
+
+// GetRelativePath : returns a pointer to the relative path
+char *GetRelativePath(char *path, char *base);
+
+// GetCurrentTime : gets the current time
+char *GetCurrentTime(void);
+// GetGitCommit : returns the current git commit hash
+char *GetGitCommit(void);
+// GetGitUser : returns the current git user
+char *GetGitUser(void);
+// GetGitUser : returns the current git user
+char *GetGitEmail(void);
+// GetGitRoot : returns the full path of the current git repo
 char *GetGitRoot(void);
 
 int main(int argc, char **argv)
@@ -137,14 +152,34 @@ int main(int argc, char **argv)
 // ReviewLoop : this is the review loop
 int ReviewLoop(struct state_t *state)
 {
+	char *root;
+	char *absfile;
+	char *relfile;
 	char *s;
+	char prompt[BUFLARGE];
 
-	while ((s = readline("What now? > "))) {
+#define PROMPT_PATTERN ("Reviewing: %s\nWhat now [n,p,r,v,s,q]? > ")
+
+	root = GetGitRoot();
+	absfile = state->files[state->currfile];
+	relfile = GetRelativePath(absfile, root);
+
+	snprintf(prompt, sizeof prompt, PROMPT_PATTERN, relfile);
+
+	while ((s = readline(prompt))) {
 		if (s[0] == 'q') {
 			break;
 		}
 
+		if (strlen(s) == 0) {
+			CMDHelp(state);
+			continue;
+		}
+
+		// (1/1) Stage this hunk [y,n,q,a,d,e,?]?
+
 		switch (s[0]) {
+		case '?': // [?]
 		case 'h': // [h]elp
 			CMDHelp(state);
 			break;
@@ -171,10 +206,18 @@ int ReviewLoop(struct state_t *state)
 			CMDHelp(state);
 			break;
 		}
+
+		free(s);
+
+		absfile = state->files[state->currfile];
+		relfile = GetRelativePath(absfile, root);
+		snprintf(prompt, sizeof prompt, PROMPT_PATTERN, relfile);
 	}
 
 	if (s == NULL)
 		printf("\n");
+
+	free(root);
 
 	return 0;
 }
@@ -182,27 +225,78 @@ int ReviewLoop(struct state_t *state)
 // CMDPrevFile : move the 'currfile' pointer back one
 int CMDPrevFile(struct state_t *state)
 {
+	assert(state);
+
+	state->currfile += 1;
+	if (state->currfile < 0)
+		state->currfile = state->files_len - 1;
+
 	return 0;
 }
 
 // CMDNextFile : move the 'currfile' pointer forward one
 int CMDNextFile(struct state_t *state)
 {
+	assert(state);
+
+	state->currfile += 1;
+	state->currfile %= state->files_len;
+
 	return 0;
 }
 
 // CMDReview : edit the 'currfile'
 int CMDReview(struct state_t *state)
 {
+	char *file;
+	char *s;
 
-#if 0
-	WriteReviewMessage("junkometer.c");
-	EditReviewMessage();
-	s = ReadReviewMessage();
-	printf("Message:\n%s\n", s);
-	free(s);
+	char *user;
+	char *email;
+	char *time;
+	char *hash;
+	char *comment;
+	int score;
+
+	// TODO (Brian) we need to make sure the user enters in an integer
+
+	file = state->files[state->currfile];
+
+	WriteReviewMessage(file);
+	OpenEditor(REVIEW_FILE);
+
+	comment = ReadReviewMessage();
 	RemoveReviewMessage();
-#endif
+
+	s = readline("Score? > ");
+
+	if (s == NULL) {
+		printf("\n");
+		exit(1);
+	}
+
+	score = atoi(s);
+
+	user = GetGitUser();
+	email = GetGitEmail();
+	time = GetCurrentTime();
+	hash = GetGitCommit();
+
+	C_RESIZE(&state->ratings);
+
+	state->ratings[state->ratings_len].user = user;
+	state->ratings[state->ratings_len].email = email;
+	state->ratings[state->ratings_len].time = time;
+	state->ratings[state->ratings_len].path = strdup(file);
+	state->ratings[state->ratings_len].hash = hash;
+	state->ratings[state->ratings_len].comment = comment;
+	state->ratings[state->ratings_len].score = score;
+
+	printf("User: %s\n", user);
+
+	state->ratings_len++;
+
+	CMDNextFile(state);
 
 	return 0;
 }
@@ -210,22 +304,24 @@ int CMDReview(struct state_t *state)
 // CMDViewFile : open the 'currfile' in the user's editor / pager
 int CMDViewFile(struct state_t *state)
 {
+	char *file;
+
+	file = state->files[state->currfile];
+	OpenEditor(file);
+
 	return 0;
 }
 
 // CMDHelp : help command
 int CMDHelp(struct state_t *state)
 {
-	puts("*** Commands ***");
+	puts("n - next file");
+	puts("s - score file");
+	puts("p - prev file");
+	puts("r - review file");
+	puts("v - view file");
 
-	puts("[e]valuate");
-	puts("[n]ext file");
-	puts("[p]rev file");
-	puts("[r]eview");
-	puts("[s]kip file");
-	puts("[v]iew file");
-
-	puts("[q]uit");
+	puts("q - quit");
 
 	return 0;
 }
@@ -287,18 +383,18 @@ int ReadDBReview(struct state_t *state, FILE *fp)
 		v = strdup(++v);
 
 		if (strneq("AuthorName", k)) {
-			state->ratings[state->ratings_len].author_name = v;
+			state->ratings[state->ratings_len].user = v;
 		} else if (strneq("AuthorEmail", k)) {
-			state->ratings[state->ratings_len].author_email = v;
+			state->ratings[state->ratings_len].email = v;
 		} else if (strneq("Timestamp", k)) {
-			state->ratings[state->ratings_len].timestamp = v;
+			state->ratings[state->ratings_len].time = v;
 		} else if (strneq("Score", k)) {
 			state->ratings[state->ratings_len].score = atoi(v);
 			free(v);
 		} else if (strneq("Path", k)) {
 			state->ratings[state->ratings_len].path = v;
-		} else if (strneq("Commit", k)) {
-			state->ratings[state->ratings_len].commit = v;
+		} else if (strneq("Hash", k)) {
+			state->ratings[state->ratings_len].hash = v;
 		}
 	}
 
@@ -472,6 +568,29 @@ int WriteDB(struct state_t *state)
 // FreeState : frees the state object
 int FreeState(struct state_t *state)
 {
+	int i;
+
+	assert(state);
+
+	free(state->notes);
+
+	for (i = 0; i < state->files_len; i++) {
+		free(state->files[i]);
+	}
+
+	free(state->files);
+
+	for (i = 0; i < state->ratings_len; i++) {
+		free(state->ratings[i].user);
+		free(state->ratings[i].email);
+		free(state->ratings[i].time);
+		free(state->ratings[i].path);
+		free(state->ratings[i].hash);
+		free(state->ratings[i].comment);
+	}
+
+	free(state->ratings);
+
 	return 0;
 }
 
@@ -481,7 +600,7 @@ char *ReadReviewMessage(void)
 	char *s, *t;
 	char *message;
 
-	s = sys_readfile(TEMPLATE_PATH);
+	s = sys_readfile(REVIEW_FILE);
 	t = strndup(s, strstr(s, "\n#") - s);
 
 	message = strdup(trim(t));
@@ -492,12 +611,12 @@ char *ReadReviewMessage(void)
 	return message;
 }
 
-// EditReviewMessage : opens the review message in the user's editor
-int EditReviewMessage(void)
+// OpenEditor : opens the review message in the user's editor
+int OpenEditor(char *s)
 {
 	char tbuf[2048];
 
-	snprintf(tbuf, sizeof tbuf, "$EDITOR %s", TEMPLATE_PATH);
+	snprintf(tbuf, sizeof tbuf, "$EDITOR %s", s != NULL ? s : "");
 	system(tbuf);
 
 	return 0;
@@ -508,7 +627,7 @@ int WriteReviewMessage(char *path)
 {
 	FILE *f;
 
-	f = fopen(TEMPLATE_PATH, "w+");
+	f = fopen(REVIEW_FILE, "w+");
 	if (!f) {
 		return -1;
 	}
@@ -526,21 +645,67 @@ int WriteReviewMessage(char *path)
 // RemoveReviewMessage : removes the template file
 int RemoveReviewMessage(void)
 {
-	remove(TEMPLATE_PATH);
+	remove(REVIEW_FILE);
 	return 0;
 }
 
-// GetGitRoot : changes current working directory to the git root
+// GetRelativePath : returns a pointer to the relative path
+char *GetRelativePath(char *path, char *base)
+{
+	// NOTE (Brian) this totally doesn't work, unless path is already _in_ the
+	// base. There's a way to write this, where it'll actually return ../s
+	// and stuff, but that isn't this.
+	//
+	// You should do that at some point though. Seems like a good exercise.
+	//
+	// using strcmp for this is a hack
+
+	while (path && base && *base && *path++ == *base++)
+		;
+
+	return path + 1;
+}
+
+// GetGitCommit : returns the current git commit hash
+char *GetGitCommit(void)
+{
+	return RunCommand("git rev-parse HEAD");
+}
+
+// GetCurrentTime : gets the current time
+char *GetCurrentTime(void)
+{
+	return RunCommand("date +\"%F %T %Z\"");
+}
+
+// GetGitUser : returns the current git user
+char *GetGitUser(void)
+{
+	return RunCommand("git config user.name");
+}
+
+// GetGitUser : returns the current git user
+char *GetGitEmail(void)
+{
+	return RunCommand("git config user.email");
+}
+
+// GetGitRoot : returns the full path of the current git repo
 char *GetGitRoot(void)
 {
-	// TODO (Brian) return -1 if we aren't in a git repo
+	return RunCommand("git rev-parse --show-toplevel");
+}
+
+// RunCommand : runs a command, and returns the result
+char *RunCommand(char *cmd)
+{
 	FILE *fp;
 	char tbuf[BUFLARGE];
 	char *s;
 
-	fp = popen("git rev-parse --show-toplevel", "r");
+	fp = popen(cmd, "r");
 	if (!fp) {
-		ERR("Couldn't get git root directory!\n");
+		ERR("Couldn't exec command: '%s'\n", cmd);
 		return NULL;
 	}
 
