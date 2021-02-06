@@ -9,20 +9,6 @@
  * 2. order to view files we haven't evaluated yet (in eval mode)
  * 3. when we get to an unreviewed file, it opens the file in the editor, and when it closes we ask for the eval, just like git add -p
  * 4. when we get to a reviewed file, same thing, just show the last review
- *
- * TODO (Brian) DB Format
- *
- * I think the file format should probably look something like this:
- *
- * TODO (Brian) check if programs are on the computer (which?)
- *
- * TODO (Brian) Iterate Through Files
- *
- * ============ REVIEWED FILE ================
- * path: path/in/tree/from/git/root
- * average_score: 3.4
- *
- * (ends without a closing thing)
  */
 
 #define COMMON_IMPLEMENTATION
@@ -32,7 +18,14 @@
 #include <errno.h>
 
 #define TEMPLATE_PATH ("JUNKOMETER_REVIEWMSG")
-#define DB_PATH ("$HOME/.jankdb")
+#define DB_PATH ("/home/brian/.jankdb")
+
+// The section marker is enough characters to denote that the line of the
+// file is a marker. Which marker it is is determined by the next three #defs.
+#define MARKER_SECTION ("==========")
+#define MARKER_NOTES   ("============== NOTES ==============")
+#define MARKER_CONFIG  ("========== CONFIGURATION ==========")
+#define MARKER_REVIEW  ("========== REVIEWED FILE ==========")
 
 enum REPOTYPE {
 	REPOTYPE_NONE,
@@ -56,8 +49,24 @@ struct config_t {
 
 struct state_t {
 	struct config_t config;
+	char *notes;
 	MK_RESIZE_ARR(struct rating_t, ratings);
 };
+
+// ReviewLoop : this is the review loop
+int ReviewLoop(struct state_t *state);
+
+// ReadDB : reads the jankdb into state
+int ReadDB(struct state_t *state);
+// ReadDBConfig : reads the config section from the database
+int ReadDBConfig(struct state_t *state, FILE *fp);
+// ReadDBNotes : reads the notes section of the database
+int ReadDBNotes(struct state_t *state, FILE *fp);
+// ReadDBReview : reads the review section from the database
+int ReadDBReview(struct state_t *state, FILE *fp);
+
+// WriteDB : writes the jankdb from state
+int WriteDB(struct state_t *state);
 
 // EditReviewMessage : opens the review message in the user's editor
 int EditReviewMessage(void);
@@ -73,19 +82,106 @@ int main(int argc, char **argv)
 	struct state_t state;
 	char *s;
 
+	ReadDB(&state);
+
+	ReviewLoop(&state);
+
+	WriteDB(&state);
+
+#if 0
 	WriteReviewMessage("junkometer.c");
 	EditReviewMessage();
 	s = ReadReviewMessage();
 	printf("Message:\n%s\n", s);
 	free(s);
 	RemoveReviewMessage();
+#endif
 
 	return 0;
 }
 
-// ReadDB : reads the jankdb into state
-int ReadJank(struct state_t *state)
+// ReviewLoop : this is the review loop
+int ReviewLoop(struct state_t *state)
 {
+	return 0;
+}
+
+// ReadDB : reads the jankdb into state
+int ReadDB(struct state_t *state)
+{
+	FILE *fp;
+	char *s;
+	char tbuf[BUFLARGE];
+
+	fp = fopen(DB_PATH, "rb");
+	if (!fp) {
+		ERR("Couldn't open '%s'\n", DB_PATH);
+		return -1;
+	}
+
+	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
+		s = trim(tbuf);
+
+		if (streq(s, MARKER_REVIEW)) {
+			ReadDBReview(state, fp);
+		} else if (streq(s, MARKER_NOTES)) {
+			ReadDBNotes(state, fp);
+		} else if (streq(s, MARKER_CONFIG)) {
+			ReadDBConfig(state, fp);
+		}
+	}
+
+	fclose(fp);
+
+	return 0;
+}
+
+// ReadDBReview : reads the review section from the database
+int ReadDBReview(struct state_t *state, FILE *fp)
+{
+	char tbuf[BUFLARGE];
+
+	return 0;
+}
+
+// ReadDBNotes : reads the notes section of the database
+int ReadDBNotes(struct state_t *state, FILE *fp)
+{
+	char tbuf[BUFLARGE];
+	char *s, *t;
+	size_t s_len, s_cap;
+
+	s = t = NULL;
+	s_len = s_cap = 0;
+
+	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
+		t = trim(tbuf);
+
+		if (strneq(t, MARKER_SECTION)) {
+			break;
+		}
+
+		if (s_cap < s_len + strlen(t)) {
+			s_cap += sizeof tbuf;
+			s = realloc(s, s_cap);
+			s_len = strlen(s);
+		}
+
+		strncat(s, t, s_cap);
+	}
+
+	state->notes = s;
+
+	printf("Notes:\n%s\n", state->notes);
+
+	return 0;
+}
+
+// ReadDBConfig : reads the config section from the database
+int ReadDBConfig(struct state_t *state, FILE *fp)
+{
+	char tbuf[BUFLARGE];
+
 	return 0;
 }
 
