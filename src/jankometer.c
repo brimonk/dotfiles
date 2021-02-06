@@ -36,11 +36,11 @@ enum REPOTYPE {
 struct rating_t {
 	char *author_name;
 	char *author_email;
-	char *comment;
-	struct tm tm;
-	int score;
-	char *path_from_root;
+	char *timestamp;
+	char *path;
 	char *commit;
+	char *comment;
+	int score;
 };
 
 struct config_t {
@@ -50,7 +50,8 @@ struct config_t {
 struct state_t {
 	struct config_t config;
 	char *notes;
-	MK_RESIZE_ARR(struct rating_t, ratings);
+	struct rating_t *ratings;
+	size_t ratings_len, ratings_cap;
 };
 
 // ReviewLoop : this is the review loop
@@ -64,6 +65,9 @@ int ReadDBConfig(struct state_t *state, FILE *fp);
 int ReadDBNotes(struct state_t *state, FILE *fp);
 // ReadDBReview : reads the review section from the database
 int ReadDBReview(struct state_t *state, FILE *fp);
+
+// ReadDBToNextMarker : reads the database file up until the next marker, returns the string
+char *ReadDBToNextMarker(FILE *fp);
 
 // WriteDB : writes the jankdb from state
 int WriteDB(struct state_t *state);
@@ -84,6 +88,8 @@ int main(int argc, char **argv)
 {
 	struct state_t state;
 	char *s;
+
+	memset(&state, 0, sizeof state);
 
 	ReadDB(&state);
 	ReviewLoop(&state);
@@ -142,6 +148,50 @@ int ReadDB(struct state_t *state)
 int ReadDBReview(struct state_t *state, FILE *fp)
 {
 	char tbuf[BUFLARGE];
+	char *s, *k, *v;
+
+	C_RESIZE(&state->ratings);
+
+	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
+		s = trim(tbuf);
+
+		if (strlen(s) == 0) {
+			break;
+		}
+
+		k = s;
+		v = strchr(s, ':');
+
+		if (v == NULL) { // potentially an error in the config section?
+			continue;
+		}
+
+		v = strdup(++v);
+
+		if (strneq("AuthorName", k)) {
+			state->ratings[state->ratings_len].author_name = v;
+		} else if (strneq("AuthorEmail", k)) {
+			state->ratings[state->ratings_len].author_email = v;
+		} else if (strneq("Timestamp", k)) {
+			state->ratings[state->ratings_len].timestamp = v;
+		} else if (strneq("Score", k)) {
+			state->ratings[state->ratings_len].score = atoi(v);
+			free(v);
+		} else if (strneq("Path", k)) {
+			state->ratings[state->ratings_len].path = v;
+		} else if (strneq("Commit", k)) {
+			state->ratings[state->ratings_len].commit = v;
+		}
+	}
+
+	s = trim(ReadDBToNextMarker(fp));
+	state->ratings[state->ratings_len].comment = s;
+
+	printf("Path: %s\nComment:\n%s\n",
+		state->ratings[state->ratings_len].path,
+		state->ratings[state->ratings_len].comment);
+
+	state->ratings_len++;
 
 	return 0;
 }
@@ -149,29 +199,9 @@ int ReadDBReview(struct state_t *state, FILE *fp)
 // ReadDBNotes : reads the notes section of the database
 int ReadDBNotes(struct state_t *state, FILE *fp)
 {
-	char tbuf[BUFLARGE];
-	char *s, *t;
-	size_t s_len, s_cap;
+	char *s;
 
-	s = t = NULL;
-	s_len = s_cap = 0;
-
-	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
-		t = trim(tbuf);
-
-		if (strneq(t, MARKER_SECTION)) {
-			break;
-		}
-
-		if (s_cap < s_len + strlen(t)) {
-			s_cap += sizeof tbuf;
-			s = realloc(s, s_cap);
-			s_len = strlen(s);
-		}
-
-		strncat(s, t, s_cap);
-	}
-
+	s = ReadDBToNextMarker(fp);
 	state->notes = s;
 
 	return 0;
@@ -182,9 +212,20 @@ int ReadDBConfig(struct state_t *state, FILE *fp)
 {
 	char tbuf[BUFLARGE];
 	char *s, *k, *v;
+	size_t tbuflen;
 
 	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
+		tbuflen = strlen(tbuf);
 		s = trim(tbuf);
+
+		if (strlen(s) == 0) { // config error?
+			continue;
+		}
+
+		if (strneq(s, MARKER_SECTION)) {
+			fseek(fp, -tbuflen, SEEK_CUR);
+			break;
+		}
 
 		k = s;
 		v = strchr(s, ':');
@@ -201,6 +242,37 @@ int ReadDBConfig(struct state_t *state, FILE *fp)
 	}
 
 	return 0;
+}
+
+// ReadDBToNextMarker : reads the database file up until the next marker, returns the string
+char *ReadDBToNextMarker(FILE *fp)
+{
+	char tbuf[BUFLARGE];
+	char *s, *t;
+	size_t s_len, s_cap;
+	fpos_t pos;
+
+	s = t = NULL;
+	s_len = s_cap = 0;
+
+	while ((tbuf == fgets(tbuf, sizeof tbuf, fp))) {
+		t = tbuf;
+
+		if (strneq(t, MARKER_SECTION)) { // rewind file pointer here
+			fseek(fp, -strlen(t), SEEK_CUR);
+			break;
+		}
+
+		if (s_cap < s_len + strlen(t)) {
+			s_cap += sizeof tbuf;
+			s = realloc(s, s_cap);
+			s_len = strlen(s);
+		}
+
+		strncat(s, t, s_cap);
+	}
+
+	return s;
 }
 
 // WriteDB : writes the jankdb from state
