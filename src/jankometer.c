@@ -15,10 +15,7 @@
  * - [q]uit
  *
  * TODO (Brian) Main Program
- * 1. iterate over the files that follow a specific expression
- * 2. order to view files we haven't evaluated yet (in eval mode)
- * 3. when we get to an unreviewed file, it opens the file in the editor, and when it closes we ask for the eval, just like git add -p
- * 4. when we get to a reviewed file, same thing, just show the last review
+ * 1. order the files by highest score, unreviewed files have an INT_MAX score
  */
 
 #define COMMON_IMPLEMENTATION
@@ -43,12 +40,6 @@
 #define MARKER_NOTES   ("============== NOTES ==============")
 #define MARKER_CONFIG  ("========== CONFIGURATION ==========")
 #define MARKER_REVIEW  ("========== REVIEWED FILE ==========")
-
-enum REPOTYPE {
-	REPOTYPE_NONE,
-	REPOTYPE_GIT,
-	REPOTYPE_TOTAL
-};
 
 struct rating_t {
 	char *user;
@@ -176,8 +167,6 @@ int ReviewLoop(struct state_t *state)
 			continue;
 		}
 
-		// (1/1) Stage this hunk [y,n,q,a,d,e,?]?
-
 		switch (s[0]) {
 		case '?': // [?]
 		case 'h': // [h]elp
@@ -256,7 +245,11 @@ int CMDReview(struct state_t *state)
 	char *time;
 	char *hash;
 	char *comment;
+
+	char *score_prompt;
+
 	int score;
+	int have_int;
 
 	// TODO (Brian) we need to make sure the user enters in an integer
 
@@ -268,14 +261,21 @@ int CMDReview(struct state_t *state)
 	comment = ReadReviewMessage();
 	RemoveReviewMessage();
 
-	s = readline("Score? > ");
+	for (have_int = 0, score_prompt = "Score ? > "; !have_int;) {
+		s = readline(score_prompt);
 
-	if (s == NULL) {
-		printf("\n");
-		exit(1);
+		if (s == NULL) {
+			printf("\n");
+			exit(1);
+		}
+
+		if (!strchr(s, '.')) {
+			score = atoi(s);
+			break;
+		}
+
+		score_prompt = "Please enter an int for the score > ";
 	}
-
-	score = atoi(s);
 
 	user = GetGitUser();
 	email = GetGitEmail();
