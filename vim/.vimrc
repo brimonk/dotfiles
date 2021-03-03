@@ -191,6 +191,9 @@ autocmd BufRead,BufNewFile *.ts setlocal cinoptions=j1,J1,(1s
 " Honestly, webdev isn't all that bad...
 autocmd BufRead,BufNewFile *.ejs  set filetype=html
 
+" freaking text files
+autocmd BufRead,BufNewFile *.txt set fo-=ro
+
 " TOML File Syntax Highlighting
 augroup filetypedetect 
   au! BufRead,BufNewFile *.toml set filetype=toml 
@@ -236,8 +239,10 @@ map 0 ^
 " I fatfinger F1 all the time on my laptop
 map <F1> <nop>
 
-" Insert date with <leader>d
+" Insert date/time with <leader>d
 nnoremap <leader>d "=strftime("%Y-%m-%d %H:%M:%S")<CR>p
+" Insert date with <leader>D
+nnoremap <leader>D "=strftime("%Y-%m-%d")<CR>p
 
 " Section: Spelling
 " Pressing ,ss will toggle and untoggle spell checking
