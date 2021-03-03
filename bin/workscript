@@ -19,7 +19,7 @@ CONTAINERFILE="$HOME/.containers"
 # usage
 function usage
 {
-	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb>"
+	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|tasks|todo>"
 	exit 1
 }
 
@@ -55,6 +55,7 @@ function reap
 	sudo pkill -9 dotnet
 	sudo pkill -9 ng
 	sudo pkill -9 node
+	sudo pkill -9 rzls
 }
 
 # clearstate : clears the build(s) state
@@ -115,6 +116,8 @@ function buildall
 
 	while IFS= read -r line;
 	do
+		[[ "$line" =~ ^\#.* ]] && continue
+
 		bcmd=$(echo "$line" | awk -F';' '{print $1}')
 		bstr=$(echo "$line" | awk -F';' '{print $2}')
 		bdir=$(echo "$line" | awk -F';' '{print $3}')
@@ -250,6 +253,8 @@ function newdb
 
 	while IFS= read -r line;
 	do
+		[[ "$line" =~ ^\#.* ]] && continue
+
 		cname=$(echo "$line" | awk -F';' '{print $1}')
 		cport=$(echo "$line" | awk -F';' '{print $2}')
 		cremote=$(echo "$line" | awk -F';' '{print $3}')
@@ -262,6 +267,70 @@ function newdb
 
 		resetcontainer "$cname" "$cport" "$cremote"
 	done < "$CONTAINERFILE"
+}
+
+# NOTE (Brian) both of the tasks and todo systems use single files in the
+# user's $HOME directory, ~/.tasks and ~/.todo.
+#
+# When you have something to add to your todo list, you run:
+#
+#   workscript todo
+#
+# And the todo file opens so you can edit it. You add lines into the todo file,
+# and when you close your editor, each line
+
+# task : adds to the task list
+function tasks
+{
+	listmanage "$HOME/.tasks"
+}
+
+# todo : allows you to work within the todo system
+function todo
+{
+	listmanage "$HOME/.todo"
+}
+
+# listmanage : generic function to allow for the managing of a list
+function listmanage
+{
+	FILE="$1"
+
+	# COMMANDS:
+	#
+	#  When editing the tasks file, a number of commands can be put on the line
+	#  of a specific TASK you're editing. These are as follows:
+	#
+	#  A - Adds New Record
+	#  E - Edits The Record
+	#  D - Deletes The Record
+	#  S - On a blank line denotes you'd like the sync the file.
+
+	# TODO (Brian) actually make these semi-configurable configurable
+	RHOST="chrzanowski.me"
+	RPATH="/var/www/chrzanowski.me/data"
+
+	touch $FILE
+
+	sum=$(md5sum $FILE)
+
+	# first we make the file we're going to edit
+	temp="$(mktemp $FILE.XXXXXX)"
+
+	cat $FILE >> $temp
+
+	$EDITOR $temp
+
+	cat < $temp > $FILE
+
+	rm $temp
+
+	sed -i '/^[[:space:]]*$/d; /^#/d' $FILE
+	sort -r -o $FILE $FILE
+
+	if [ "$sum" != "$(md5sum $FILE)" ]; then
+		scp -q $FILE $USER@$RHOST:$RPATH/$(basename $FILE)
+	fi
 }
 
 if [ "$#" -eq 0 ]; then
@@ -304,6 +373,12 @@ do
 		;;
 		"newdb")
 			newdb
+		;;
+		"tasks")
+			tasks
+		;;
+		"todo")
+			todo
 		;;
 		*)
 			usage

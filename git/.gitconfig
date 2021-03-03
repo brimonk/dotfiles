@@ -53,6 +53,8 @@
 	# git "branch clean"
 	bc="!for b in $(git branch | grep -v '*'); do read -p 'delete "'"$b"'" (Y/N)? ' v ; [ $v = 'y' ] || [ $v = 'Y' ] && git branch -D "$b"; done"
 
+	rc="!git clean -f . && git restore --staged . && git restore ."
+
     # list aliases
     la="!git config -l | grep alias | cut -c 7-"
 
