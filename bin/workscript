@@ -19,7 +19,7 @@ CONTAINERFILE="$HOME/.containers"
 # usage
 function usage
 {
-	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|tasks|todo|upload>"
+	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|tasks|todo>"
 	exit 1
 }
 
@@ -269,13 +269,6 @@ function newdb
 	done < "$CONTAINERFILE"
 }
 
-# upload : uses files.chrzanowski.me to store either $1 or stdin
-function upload
-{
-	[ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
-	cat $input | curl --data-binary @- https://files.chrzanowski.me/upload
-}
-
 # NOTE (Brian) both of the tasks and todo systems use single files in the
 # user's $HOME directory, ~/.tasks and ~/.todo.
 #
@@ -377,10 +370,6 @@ do
 		;;
 		"newdb")
 			newdb
-		;;
-		"upload")
-			upload $arg
-			shift
 		;;
 		"tasks")
 			tasks

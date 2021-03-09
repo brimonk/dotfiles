@@ -70,3 +70,13 @@ if [ -f ~/.bash_machine ]; then
 	. ~/.bash_machine
 fi
 
+# ADDITIONAL FUNCTIONS
+
+# upload : uses files.chrzanowski.me to store either $1 or stdin
+function upload
+{
+	[ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
+	cat $input | curl --data-binary @- https://files.chrzanowski.me/upload
+}
+
+
