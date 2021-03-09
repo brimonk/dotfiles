@@ -272,7 +272,8 @@ function newdb
 # upload : uses files.chrzanowski.me to store either $1 or stdin
 function upload
 {
-	curl -X "POST" --data-binary @- https://files.chrzanowski.me/upload < "${1:-/dev/stdin}"
+	[ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
+	cat $input | curl --data-binary @- https://files.chrzanowski.me/upload
 }
 
 # NOTE (Brian) both of the tasks and todo systems use single files in the
