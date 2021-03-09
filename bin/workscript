@@ -19,7 +19,7 @@ CONTAINERFILE="$HOME/.containers"
 # usage
 function usage
 {
-	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|tasks|todo>"
+	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|tasks|todo|upload>"
 	exit 1
 }
 
@@ -269,6 +269,12 @@ function newdb
 	done < "$CONTAINERFILE"
 }
 
+# upload : uses files.chrzanowski.me to store either $1 or stdin
+function upload
+{
+	curl -X "POST" --data-binary @- https://files.chrzanowski.me/upload < "${1:-/dev/stdin}"
+}
+
 # NOTE (Brian) both of the tasks and todo systems use single files in the
 # user's $HOME directory, ~/.tasks and ~/.todo.
 #
@@ -296,23 +302,20 @@ function listmanage
 {
 	FILE="$1"
 
-	# COMMANDS:
-	#
-	#  When editing the tasks file, a number of commands can be put on the line
-	#  of a specific TASK you're editing. These are as follows:
-	#
-	#  A - Adds New Record
-	#  E - Edits The Record
-	#  D - Deletes The Record
-	#  S - On a blank line denotes you'd like the sync the file.
-
 	# TODO (Brian) actually make these semi-configurable configurable
 	RHOST="chrzanowski.me"
 	RPATH="/var/www/chrzanowski.me/data"
 
-	touch $FILE
+	[ ! -f $FILE ] && touch $FILE
 
-	sum=$(md5sum $FILE)
+	CHKSUM=$(md5sum $FILE)
+	RDATE=$(ssh $USER@$RHOST "date +'%Y-%m-%d %H:%M:%S' -r $RPATH/$(basename $FILE)")
+
+	# check to see if our local needs to be updated
+	if [[ "$(date +'%Y-%m-%d %H:%M:%S' -r $FILE)" < "$RDATE" ]]; then
+		ssh $USER@$RHOST "cat $RPATH/$(basename $FILE)" >> $FILE
+		sort -r -u -o $FILE $FILE
+	fi
 
 	# first we make the file we're going to edit
 	temp="$(mktemp $FILE.XXXXXX)"
@@ -328,7 +331,7 @@ function listmanage
 	sed -i '/^[[:space:]]*$/d; /^#/d' $FILE
 	sort -r -o $FILE $FILE
 
-	if [ "$sum" != "$(md5sum $FILE)" ]; then
+	if [ "$CHKSUM" != "$(md5sum $FILE)" ]; then
 		scp -q $FILE $USER@$RHOST:$RPATH/$(basename $FILE)
 	fi
 }
@@ -344,7 +347,7 @@ do
 
 	case "$cmd" in
 		"push")
-			push $arg;
+			push $arg
 			shift
 		;;
 		"pop")
@@ -373,6 +376,10 @@ do
 		;;
 		"newdb")
 			newdb
+		;;
+		"upload")
+			upload $arg
+			shift
 		;;
 		"tasks")
 			tasks
