@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Brian Chrzanowski
+# 2021-03-09 15:32:37
+#
+# Upload Function
+
+[ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
+cat $input | curl --data-binary @- https://files.chrzanowski.me/upload
+
