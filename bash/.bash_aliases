@@ -29,9 +29,6 @@ alias tmux='tmux -2'
 # make gdb shut up
 alias gdb='gdb -q'
 
-# shutdown the nc network socket after EOF
-alias nc="nc -N"
-
 function gr {
 	DIR="$(git root)"
 	[[ ! -z "$DIR" ]] && cd "$DIR"
