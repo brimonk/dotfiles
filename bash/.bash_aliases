@@ -37,3 +37,8 @@ function gr {
 	[[ ! -z "$DIR" ]] && cd "$DIR"
 }
 
+# webserv: just serve the current directory
+function webserv {
+	python -m SimpleHTTPServer
+}
+

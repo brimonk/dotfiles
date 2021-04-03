@@ -21,6 +21,9 @@ nmap <Space> ,
 " Fast saving
 nmap <leader>w :w!<cr>
 
+" Fast uploading
+nmap <leader>U :w !upload<cr>
+
 set timeoutlen=5000
 " :W sudo saves the file 
 " (useful for handling the permission-denied error)
