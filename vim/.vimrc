@@ -2,14 +2,56 @@
 " Vim RC
 " TODO clean - this file's a mess
 
-syntax on
+" Plugin Section
+call plug#begin("~/.vim/plugged")
+
+" check if we're on the work machine
+let hostname = substitute(system('hostname'), '\n', '', '')
+if hostname == "brian-kla"
+	" install all of the c# typescript plugins we'd ever want
+
+	" the main omnisharp plugin
+	Plug 'OmniSharp/omnisharp-vim'
+
+	let g:OmniSharp_selector_ui = 'fzf'
+	let g:OmniSharp_selector_findusages = 'fzf'
+
+	let g:OmniSharp_popup_mappings = {
+		\ 'sigNext': '<C-n>',
+		\ 'sigPrev': '<C-p>',
+		\ 'lineDown': ['<C-e>', 'j'],
+		\ 'lineUp': ['<C-y>', 'k']
+	\}
+
+    let g:OmniSharp_popup_mappings.close = '<Esc>'
+
+	" Mappings, code-actions available flag and statusline integration
+	Plug 'nickspoons/vim-sharpenup'
+
+	" Linting/error highlighting
+	Plug 'dense-analysis/ale'
+
+	" Vim FZF integration, used as OmniSharp selector
+	Plug 'junegunn/fzf'
+	Plug 'junegunn/fzf.vim'
+
+	" Autocompletion
+	Plug 'prabirshrestha/asyncomplete.vim'
+endif
+
+" Colorscheme
+Plug 'gruvbox-community/gruvbox'
+
+call plug#end()
+
+" syntax on
+" filetype plugin on
+" filetype indent on
 
 " --
 " Section: General
 " --
 set history=500
-filetype plugin on
-filetype indent on
 
 set autoread
 
@@ -73,18 +115,19 @@ set textwidth=0
 " Section: Colors and Fonts
 " --
 
-" Enable syntax highlighting
-syntax enable 
-syntax on
-
 if has("win32") " handle the GUI font
 	set guifont=Courier_New:h14
 else
 	set guifont=FreeMono\ 12
 end
 
+set background=dark
 
-colorscheme desert
+if hostname == 'brian-kla'
+    colorscheme gruvbox
+else
+    colorscheme desert
+endif
 
 " create an indicator at 80 chars
 set colorcolumn=80,100
