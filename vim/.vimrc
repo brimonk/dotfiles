@@ -23,7 +23,7 @@ if hostname == "brian-kla"
 		\ 'lineUp': ['<C-y>', 'k']
 	\}
 
-    let g:OmniSharp_popup_mappings.close = '<Esc>'
+	let g:OmniSharp_popup_mappings.close = '<Esc>'
 
 	" Mappings, code-actions available flag and statusline integration
 	Plug 'nickspoons/vim-sharpenup'
