@@ -30,6 +30,7 @@ if hostname == "brian-kla"
 
 	" Linting/error highlighting
 	Plug 'dense-analysis/ale'
+	let g:ale_enabled = 0
 
 	" Vim FZF integration, used as OmniSharp selector
 	Plug 'junegunn/fzf'
@@ -39,14 +40,11 @@ if hostname == "brian-kla"
 	Plug 'prabirshrestha/asyncomplete.vim'
 endif
 
-" Colorscheme
-Plug 'gruvbox-community/gruvbox'
-
 call plug#end()
 
-" syntax on
-" filetype plugin on
-" filetype indent on
+com! UUID exe "normal! i".system('uuidgen | tr "[:upper:]" "[:lower:]" | tr -d "\n"')
+
+set nofixendofline
 
 " --
 " Section: General
@@ -122,12 +120,8 @@ else
 end
 
 set background=dark
-
-if hostname == 'brian-kla'
-    colorscheme gruvbox
-else
-    colorscheme desert
-endif
+set t_Co=256
+colorscheme torte
 
 " create an indicator at 80 chars
 set colorcolumn=80,100
@@ -167,9 +161,12 @@ set nowrap " DO NOT WRAP LINES
 " Section: FileType Handling
 " --
 
-" Bash Settings
+" Markdown
+au BufEnter,BufRead,BufNewFile *.md set nocindent
+au BufEnter,BufRead,BufNewFile *.md set textwidth=100
 
 " Better C Syntax Handling
+au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
 au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro
 au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,:0,l1
@@ -215,6 +212,8 @@ autocmd BufRead,BufNewFile *.cs setlocal shiftwidth=4 softtabstop=4 expandtab
 autocmd BufRead,BufNewFile *.cs setlocal cindent
 autocmd BufRead,BufNewFile *.cs setlocal fo+=ro
 autocmd BufRead,BufNewFile *.cs setlocal cinoptions=j1,J1,(1s
+" autocmd BufRead,BufNewFile *.cs nmap <F3> :echo "Hello"<CR>
+nmap <F3> :OmniSharpFixUsings<CR>
 
 " SQL
 autocmd BufRead,BufNewFile *.sql setlocal shiftwidth=4 softtabstop=4 expandtab

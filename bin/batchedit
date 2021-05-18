@@ -4,6 +4,7 @@
 
 while read -u 3 line
 do
+	echo "Editing $line"
 	$EDITOR "$line"
 	wait
 done 3< "${1:-/dev/stdin}"

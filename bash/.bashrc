@@ -13,10 +13,12 @@ esac
 # - ignore leading spaces & duplicates
 # - append to the history file, don't overwrite it
 # - store all history (might have to truncate it manually later)
-HISTCONTROL=ignoreboth
+HISTCONTROL=ignoreboth:erasedups
 shopt -s histappend
 HISTSIZE=-1
 HISTFILESIZE=-1
+
+# export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
 
 # PATTERN CONTROLS
 # - set pathname expansion with "**"
