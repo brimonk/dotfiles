@@ -19,7 +19,7 @@ CONTAINERFILE="$HOME/.containers"
 # usage
 function usage
 {
-	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|tasks|todo>"
+	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|project|todo>"
 	exit 1
 }
 
@@ -279,16 +279,10 @@ function newdb
 # And the todo file opens so you can edit it. You add lines into the todo file,
 # and when you close your editor, each line
 
-# task : adds to the task list
-function tasks
+# projects : adds to the projects list
+function project
 {
-	listmanage "$HOME/.tasks"
-}
-
-# todo : allows you to work within the todo system
-function todo
-{
-	listmanage "$HOME/.todo"
+	listmanage "$HOME/.projects"
 }
 
 # listmanage : generic function to allow for the managing of a list
@@ -370,11 +364,8 @@ do
 		"newdb")
 			newdb
 		;;
-		"tasks")
-			tasks
-		;;
-		"todo")
-			todo
+		"project")
+			project
 		;;
 		*)
 			usage

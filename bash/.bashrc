@@ -72,3 +72,40 @@ if [ -f ~/.bash_machine ]; then
 	. ~/.bash_machine
 fi
 
+# EXTRA STUFF
+# I have a feeling there should really be a better place for this, but do I really
+# need a whole other files for these? Certainly not.
+
+# multest: just a simple math test (adds, subs, muls, divs, and mods in base 10 and 16)
+function mtest
+{
+	DIGITS="4"
+	# [[ "$#" < 1 ]] && BASE=16 || BASE="$1"
+	BASE=16
+
+	OPS[0]="+"
+
+	OPS_LEN=${#OPS[@]}
+
+	while true ; do
+		NUM1=$(($RANDOM % $(($BASE))))
+		NUM2=0
+
+		# the second value cannot be zero - division
+		while [[ $NUM2 -eq 0 || $NUM2 -gt $NUM1 ]]; do
+			NUM2=$(($RANDOM % $(($BASE * $BASE))))
+		done
+
+		OPER=${OPS[$(($RANDOM % $OPS_LEN))]}
+		EXPR="$NUM1 $OPER $NUM2"
+		ANS="$(printf '0x%02x' $(($EXPR)))"
+
+		PROMPT="$(printf '0x%02x %s 0x%02x = ' $NUM1 $OPER $NUM2)"
+
+		read -r -p "$PROMPT" UANS
+		[[ $? -ne 0 ]] && return 0
+
+		[[ $UANS -ne $ANS ]] && echo "Wrong. $(printf '0x%02x\n' $ANS)"
+	done
+}
+

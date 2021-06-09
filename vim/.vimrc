@@ -121,7 +121,7 @@ end
 
 set background=dark
 set t_Co=256
-colorscheme torte
+" colorscheme slate
 
 " create an indicator at 80 chars
 set colorcolumn=80,100

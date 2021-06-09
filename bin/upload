@@ -5,5 +5,5 @@
 # Upload Function
 
 [ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
-cat $input | curl --data-binary @- https://files.chrzanowski.me/upload
+cat $input | curl --data-binary @- https://paste.chrzanowski.me/upload
 
