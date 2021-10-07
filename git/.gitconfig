@@ -40,6 +40,7 @@
     d=diff
     ds=diff --stat
     dc=diff --cached
+	dn=diff --name-only
 
 	root=rev-parse --show-toplevel
 

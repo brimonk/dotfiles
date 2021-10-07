@@ -19,7 +19,24 @@ CONTAINERFILE="$HOME/.containers"
 # usage
 function usage
 {
-	echo "USAGE : " $(basename $0) "<push|azlogin|pop|update|mostrecent|buildall|newdb|project|todo>"
+	echo "Brian Chrzanowski (C) $(date +"%Y")"
+	echo ""
+
+	echo "workscript - The Script I Use To Get Work Done"
+	echo ""
+
+	echo "USAGE: $(basename $0) <args...>"
+	echo -e "\tpush <name>      shortcut for 'dotnet ef migrations add"
+	echo -e "\tpop <name>       shortcut for 'dotnet ef migrations remove --force'"
+	echo -e "\tupdate           shortcut for 'dotnet ef database update'"
+	echo -e "\tmostrecent       shows the most recent migration in the Migrations/ directory"
+	echo -e "\tbuildall         reads build commands from $HOME/.builditems and state from"
+	echo -e "\t                 $HOME/.buildstate, to build a project from the root of the git repo"
+	echo -e "\tnewdb            reads $CONTAINERFILE, stops (re)starts those containers"
+	echo -e "\tazlogin          just logs in to Azure. Fucking Microsoft."
+	echo -e "\treap             kills dotnet, angular, nodejs, and some other shit."
+	echo ""
+
 	exit 1
 }
 
@@ -36,6 +53,14 @@ function wrn
 function gr
 {
 	git rev-parse --show-toplevel
+}
+
+# script-complete : sets up autocomplete information for this script
+function script-complete
+{
+	complete -f -W "reap push azlogin pop update mostrecent \
+		listmigrations trigger buildall newdb project todo indexify \
+		script-complete" workscript
 }
 
 # azlogin : does the azure cli login thingy
@@ -77,6 +102,41 @@ function addstatestr
 	echo "$1" >> $BUILDSTATE
 }
 
+# buildone : a function to build a single target from buildall
+function buildone
+{
+	# NOTE (Brian) arguments:
+	#
+	# 1. command
+	# 2. build string (identifier)
+	# 3. build directory
+
+	if [ $# -ne 3 ]; then
+		err "not enough arguments for buildone: $@"
+		exit 1
+	fi
+
+	bcmd="$1"
+	bstr="$2"
+	bdir="$3"
+
+	pushd $3
+
+	eval $1
+	RC=$?
+
+	if [ $RC -ne 0 ]; then
+		err "'$1' issue! Exited with code $RC"
+		exit $RC
+	fi
+
+	addstatestr "$2"
+
+	popd
+
+	return $RC
+}
+
 # buildall : builds all of the apps (for water)
 function buildall
 {
@@ -98,7 +158,8 @@ function buildall
 	# You should probably know the directory you reference is from the _root_ of your _git_ repo.
 	#
 	# Oh, also, you probably want to be careful what command you stuff in here because we sure
-	# do use eval. Your mileage may vary.
+	# do use eval. Your mileage may vary. To increase build times in non-Makefile friendly source
+	# trees, we use GNU Parallel to parallelize the execution.
 
 	if [ ! -f "$BUILDITEMS" ]; then
 		err "You need to create the file '$BUILDITEMS' before you can use this command"
@@ -114,86 +175,42 @@ function buildall
 
 	pushd $(gr)
 
-	while IFS= read -r line;
-	do
-		[[ "$line" =~ ^\#.* ]] && continue
+	# if [ ! -z "$(which parallel)" ]; then
+	if [ true ]; then
+		while IFS= read -r line;
+		do
+			[[ "$line" =~ ^\#.* ]] && continue
 
-		bcmd=$(echo "$line" | awk -F';' '{print $1}')
-		bstr=$(echo "$line" | awk -F';' '{print $2}')
-		bdir=$(echo "$line" | awk -F';' '{print $3}')
+			bcmd=$(echo "$line" | awk -F';' '{print $1}')
+			bstr=$(echo "$line" | awk -F';' '{print $2}')
+			bdir=$(echo "$line" | awk -F';' '{print $3}')
 
-		[ -z "$bcmd" ] || [ -z "$bstr" ] || [ -z "$bdir" ] && continue
+			[ -z "$bcmd" ] || [ -z "$bstr" ] || [ -z "$bdir" ] && continue
 
-		if ( ! hasstatestr "$bstr" ); then
-			pushd $bdir
-			time eval $bcmd
-			if [ $? -ne 0 ]; then
-				err "'$bcmd' issue! Exited with code $?"
-				exit 1;
+			if ( ! hasstatestr "$bstr" ); then
+				pushd $bdir
+				time eval $bcmd
+				if [ $? -ne 0 ]; then
+					err "'$bcmd' issue! Exited with code $?"
+					exit 1;
+				fi
+				addstatestr "$bstr"
+				popd
 			fi
-			addstatestr "$bstr"
-			popd
-		fi
 
-	done < "$BUILDITEMS"
+		done < "$BUILDITEMS"
+	else
+		# unfortunately, this is the only way to export dependencies for parallel
+		export BUILDSTATE
+		export -f err
+		export -f buildone
+		export -f addstatestr
 
-	popd # $(gr)
-}
-
-# trigger : triggers builds, but really just shits on Jenkins
-function trigger
-{
-	# TODO (Brian) make into a generic "rebuild all fails" for any org-user/project
-	# NOTE (Brian) we're probably going to want to put in an allowlist/blocklist
-	# to make sure we don't trample over everyone else's PRs
-	#
-	# We need to pull out the
-	# - user   (user.login)
-	# - branch (head.ref)
-	# - sha    (head.sha)
-	# - status
-
-	# curl --user "brimonk:$GITHUB_PAT" \
-	#     -H "Accept: application/vnd.github.v3+json" \
-	#     "https://api.github.com/repos/kunzleigh/water/statuses/b9ed6487fb852bf310f389dad60d8e5ae1641f4a" | \
-	#     jq -r ".[0].state"
-
-	# curl --user "brimonk:$GITHUB_PAT" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/kunzleigh/water/pulls?state=open" | less
-
-	mkdir -p "$HOME/.tmp"
-	pushd "$HOME/.tmp"
-
-	if [ ! -d "waterbuild/" ]; then
-		git clone "https://github.com/kunzleigh/water" waterbuild
+		grep -v "^#" $BUILDITEMS | grep -v -f "$BUILDSTATE" | sed 's/;/\t/g' | \
+			parallel --halt now,fail=1 --colsep '\t' -n 1 buildone
 	fi
 
-	cd "waterbuild/"
-
-	git fetch
-
-	PULLDATA=$(curl -s --user "brimonk:$GITHUB_PAT" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/kunzleigh/water/pulls?state=open")
-	# echo "$PULLDATA"
-
-	PULLS=$(echo "$PULLDATA" | jq -r '.[] | {user: .user.login, ref: .head.ref} | "\(.user)\t\(.ref)"')
-	# echo "$PULLS"
-
-	while IFS= read -r v; do
-		USER=$(echo $v | awk '{print $1}')
-		BRANCH=$(echo $v | awk '{print $2}')
-		STATUSDATA=$(curl -s --user "brimonk:$GITHUB_PAT" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/kunzleigh/water/commits/$BRANCH/statuses")
-		STATUS=$(echo "$STATUSDATA" | jq -r '.[0].state')
-
-		# TODO (Brian) read from the allow list of users here
-		if [ "$STATUS" = "failure" ] && [ "$USER" = "brimonk" ]; then
-			echo "TRIGGERING BUILD FOR '$BRANCH'"
-			git checkout "origin/$BRANCH" -b "$BRANCH"
-			git tb
-			git checkout master
-			git branch -D "$BRANCH"
-		fi
-	done <<< "$PULLS"
-
-	popd
+	popd # $(gr)
 }
 
 # update : updates the database to the most recent version
@@ -279,48 +296,15 @@ function newdb
 # And the todo file opens so you can edit it. You add lines into the todo file,
 # and when you close your editor, each line
 
-# projects : adds to the projects list
-function project
+# indexify : create an index.ts file in this directory, with every .ts file below
+function indexify
 {
-	listmanage "$HOME/.projects"
-}
+	[ -t 1 ] && INDEXFILE="index.ts" || INDEXFILE="/dev/stdout"
+	[ -z "$1" ] && DIR="." || DIR="$1"
 
-# listmanage : generic function to allow for the managing of a list
-function listmanage
-{
-	FILE="$1"
-
-	# TODO (Brian) actually make these semi-configurable configurable
-	RHOST="chrzanowski.me"
-	RPATH="/var/www/chrzanowski.me/data"
-
-	[ ! -f $FILE ] && touch $FILE
-
-	CHKSUM=$(md5sum $FILE)
-	RDATE=$(ssh $USER@$RHOST "date +'%Y-%m-%d %H:%M:%S' -r $RPATH/$(basename $FILE)")
-
-	# check to see if our local needs to be updated
-	if [[ "$(date +'%Y-%m-%d %H:%M:%S' -r $FILE)" < "$RDATE" ]]; then
-		ssh $USER@$RHOST "cat $RPATH/$(basename $FILE)" > $FILE
-	fi
-
-	# first we make the file we're going to edit
-	temp="$(mktemp $FILE.XXXXXX)"
-
-	cat $FILE >> $temp
-
-	$EDITOR $temp
-
-	cat < $temp > $FILE
-
-	rm $temp
-
-	sed -i '/^[[:space:]]*$/d; /^#/d' $FILE
-	sort -r -o $FILE $FILE
-
-	if [ "$CHKSUM" != "$(md5sum $FILE)" ]; then
-		scp -q $FILE $USER@$RHOST:$RPATH/$(basename $FILE)
-	fi
+	find $DIR -iname "*.ts" | \
+		sed 's/\.ts$//' | \
+		awk '{print "export * from \"" $1 "\";"}' > $INDEXFILE
 }
 
 if [ "$#" -eq 0 ]; then
@@ -358,14 +342,18 @@ do
 		"reap")
 			reap
 		;;
+		"indexify")
+			indexify $arg
+			shift
+		;;
 		"azlogin")
 			azlogin
 		;;
+		"script-complete")
+			script-complete
+		;;
 		"newdb")
 			newdb
-		;;
-		"project")
-			project
 		;;
 		*)
 			usage

@@ -39,3 +39,8 @@ function webserv {
 	python -m SimpleHTTPServer
 }
 
+# notes: opens up $HOME/.notes in the $EDITOR for note taking
+function notes {
+	$EDITOR $HOME/.notes
+}
+
