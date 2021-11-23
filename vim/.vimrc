@@ -119,14 +119,17 @@ else
 	set guifont=FreeMono\ 12
 end
 
-set background=dark
 set t_Co=256
 
+set background=dark
 colorscheme default
+" iceberg looks better in gvim, default is just fine for the term
+" colorscheme iceberg
 hi Visual term=reverse ctermbg=DarkGray
 
 " create an indicator at 80 chars
-set colorcolumn=80,100
+" set colorcolumn=80,100
+set colorcolumn=100
 highlight ColorColumn ctermbg=DarkGray
 if has("win32")
 	highlight ColorColumn ctermbg=DarkGray guibg=#3d3d3d
@@ -166,13 +169,18 @@ set nowrap " DO NOT WRAP LINES
 
 " Markdown
 au BufEnter,BufRead,BufNewFile *.md set nocindent
-au BufEnter,BufRead,BufNewFile *.md set textwidth=100
+au BufEnter,BufRead,BufNewFile *.md set syntax=markdown
+au BufEnter,BufRead,BufNewFile *.md set textwidth=0
 
 " Better C Syntax Handling
 au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
 au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro
 au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,l1
+
+" notes should be markdown oriented, without the extension
+au BufEnter,BufRead,BufNewFile $HOME/.notes set syntax=markdown
+au BufEnter,BufRead,BufNewFile $HOME/.notes set autoindent
 
 " If we're working in C#, Typescript, HTML, or CSS, set the company
 " tab settings so we don't make anyone angry in a PR

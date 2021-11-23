@@ -34,7 +34,9 @@ function usage
 	echo -e "\t                 $HOME/.buildstate, to build a project from the root of the git repo"
 	echo -e "\tnewdb            reads $CONTAINERFILE, stops (re)starts those containers"
 	echo -e "\tazlogin          just logs in to Azure. Fucking Microsoft."
+	echo -e "\tindexify         creates a new typescript index file (because modules are ********)"
 	echo -e "\treap             kills dotnet, angular, nodejs, and some other shit."
+	echo -e "\tforktree         forks the current HEAD to a new worktree, for builds and stuff"
 	echo ""
 
 	exit 1
@@ -53,14 +55,6 @@ function wrn
 function gr
 {
 	git rev-parse --show-toplevel
-}
-
-# script-complete : sets up autocomplete information for this script
-function script-complete
-{
-	complete -f -W "reap push azlogin pop update mostrecent \
-		listmigrations trigger buildall newdb project todo indexify \
-		script-complete" workscript
 }
 
 # azlogin : does the azure cli login thingy
@@ -286,25 +280,30 @@ function newdb
 	done < "$CONTAINERFILE"
 }
 
-# NOTE (Brian) both of the tasks and todo systems use single files in the
-# user's $HOME directory, ~/.tasks and ~/.todo.
-#
-# When you have something to add to your todo list, you run:
-#
-#   workscript todo
-#
-# And the todo file opens so you can edit it. You add lines into the todo file,
-# and when you close your editor, each line
-
 # indexify : create an index.ts file in this directory, with every .ts file below
 function indexify
 {
 	[ -t 1 ] && INDEXFILE="index.ts" || INDEXFILE="/dev/stdout"
 	[ -z "$1" ] && DIR="." || DIR="$1"
 
-	find $DIR -iname "*.ts" | \
+	find $DIR -iname "*.ts" -and -not -iname "*.spec.ts"| \
+		sort | \
 		sed 's/\.ts$//' | \
 		awk '{print "export * from \"" $1 "\";"}' > $INDEXFILE
+}
+
+# forktree : creates a worktree that forks the current branch to the selected dir
+function forktree
+{
+	# USAGE : workscript forktree <dir>
+
+	DIR=$(realpath $1)
+
+	git worktree add $DIR HEAD
+	mkdir -pv "$DIR/Angular/node_modules"
+	parallel -j24 cp -r {} "$DIR/Angular/node_modules/" ::: Angular/node_modules/*
+
+	echo "forktree created at " $(git worktree list | grep "$DIR" | awk '{print $1'})
 }
 
 if [ "$#" -eq 0 ]; then
@@ -349,11 +348,12 @@ do
 		"azlogin")
 			azlogin
 		;;
-		"script-complete")
-			script-complete
-		;;
 		"newdb")
 			newdb
+		;;
+		"forktree")
+			forktree $arg
+			shift
 		;;
 		*)
 			usage
