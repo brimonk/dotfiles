@@ -170,7 +170,7 @@ set nowrap " DO NOT WRAP LINES
 " Markdown
 au BufEnter,BufRead,BufNewFile *.md set nocindent
 au BufEnter,BufRead,BufNewFile *.md set syntax=markdown
-au BufEnter,BufRead,BufNewFile *.md set textwidth=0
+au BufEnter,BufRead,BufNewFile *.md set textwidth=100
 
 " Better C Syntax Handling
 au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
@@ -212,7 +212,7 @@ au BufEnter *.asm set fo+=ro
 au BufEnter *.asm set cindent
 
 " Better Markdown Behavior
-autocmd BufRead,BufNewFile *.markdown,*.mdown,*.mkd,*.mkdn,*.md  setf markdown
+autocmd BufRead,BufNewFile *.markdown,*.mdown,*.mkd,*.mkdn,*.md setf markdown
 
 " work - indentation
 autocmd BufRead,BufNewFile *.css  setlocal shiftwidth=4 softtabstop=4 expandtab

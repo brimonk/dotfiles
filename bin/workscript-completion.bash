@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 complete -f -W \
-	"push pop update mostrecent buildall newdb azlogin reap indexify forktree" \
+	"push pop update mostrecent buildall mkcontainer newdb azlogin reap indexify forktree" \
 	workscript

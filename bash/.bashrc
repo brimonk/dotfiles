@@ -41,7 +41,11 @@ case "$TERM" in
 esac
 
 # - set prompt
-export PS1="\u@\h : \W \\$ "
+if [ $(which git) ]; then
+	export PS1="\u@\h : \W "'$( [[ -d .git || -d "$(git rev-parse --absolute-git-dir 2> /dev/null)" ]] && git branch --show-current | tr -d "\n" && echo -n " ")'"\\$ "
+else
+	export PS1="\u@\h : \W \\$ "
+fi
 
 # - enable completion, if available
 if ! shopt -oq posix; then
@@ -109,3 +113,7 @@ function mtest
 	done
 }
 
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion

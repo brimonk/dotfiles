@@ -32,6 +32,10 @@ function usage
 	echo -e "\tmostrecent       shows the most recent migration in the Migrations/ directory"
 	echo -e "\tbuildall         reads build commands from $HOME/.builditems and state from"
 	echo -e "\t                 $HOME/.buildstate, to build a project from the root of the git repo"
+	echo -e "\n"
+	echo -e "\tmkcontainer <container> <tag>"
+	echo -e "\t                 commits the current container with a new tag, and pushes it"
+	echo -e "\n"
 	echo -e "\tnewdb            reads $CONTAINERFILE, stops (re)starts those containers"
 	echo -e "\tazlogin          just logs in to Azure. Fucking Microsoft."
 	echo -e "\tindexify         creates a new typescript index file (because modules are ********)"
@@ -64,7 +68,8 @@ function azlogin
 		err "you must set both \$AZUSER and \$AZPASS with your username and password respectively to login to azure" ; exit 1
 	fi 
 
-	az login -u $AZUSER -p $AZPASS
+	# az login -u $AZUSER -p $AZPASS
+	az login --use-device-code
 	az acr login --name kunzleigh
 }
 
@@ -94,6 +99,19 @@ function hasstatestr
 function addstatestr
 {
 	echo "$1" >> $BUILDSTATE
+}
+
+# mkcontainer : makes a docker container, and pushes it up
+function mkcontainer
+{
+	echo commit
+	docker commit "$1" "$DOCKER_REMOTE/$1"
+
+	echo tag
+	docker tag "$DOCKER_REMOTE/$1" "$DOCKER_REMOTE/$1:$2"
+
+	echo push
+	docker push "$DOCKER_REMOTE/$1:$2"
 }
 
 # buildone : a function to build a single target from buildall
@@ -228,7 +246,7 @@ function pop
 # mostrecent : opens the most recent migration
 function mostrecent
 {
-	$EDITOR Migrations/$(ls -lc Migrations/ | tail -n3 | head -n1 | grep -oE '[^ ]+$')
+	$PAGER Migrations/$(ls -lc Migrations/ | tail -n3 | head -n1 | grep -oE '[^ ]+$')
 }
 
 # listmigrations : lists the 5 most recent migrations
@@ -316,6 +334,11 @@ do
 	arg="$2"
 
 	case "$cmd" in
+		"mkcontainer")
+			mkcontainer $arg "$3"
+			shift
+			shift
+		;;
 		"push")
 			push $arg
 			shift
