@@ -8,6 +8,7 @@ call plug#begin("~/.vim/plugged")
 " check if we're on the work machine
 let hostname = substitute(system('hostname'), '\n', '', '')
 if hostname == "brian-kla"
+	" This is legacy stuff. I'm not sure how much we'll need this for MS...
 	" install all of the c# typescript plugins we'd ever want
 
 	" the main omnisharp plugin
