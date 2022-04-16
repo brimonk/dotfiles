@@ -121,7 +121,8 @@ end
 
 set background=dark
 set t_Co=256
-" colorscheme slate
+colorscheme default
+hi Visual term=reverse ctermbg=darkgray
 
 " create an indicator at 80 chars
 set colorcolumn=80,100
