@@ -40,12 +40,7 @@ case "$TERM" in
     xterm-color) color_prompt=yes;;
 esac
 
-# - set prompt
-if [ $(which git) ]; then
-	export PS1="\u@\h : \W "'$( [[ -d .git || -d "$(git rev-parse --absolute-git-dir 2> /dev/null)" ]] && git branch --show-current | tr -d "\n" && echo -n " ")'"\\$ "
-else
-	export PS1="\u@\h : \W \\$ "
-fi
+export PS1="\u@\h : \W \\$ "
 
 # - enable completion, if available
 if ! shopt -oq posix; then
