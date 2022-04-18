@@ -40,7 +40,7 @@ case "$TERM" in
     xterm-color) color_prompt=yes;;
 esac
 
-# - set prompt
+# prompt
 export PS1="\u@\h : \W \\$ "
 
 # - enable completion, if available
