@@ -118,7 +118,10 @@ function fzcd() {
 }
 
 function fzvim() {
-	vim $(find . -type f | fzf)
+	FILE=$(find . -type f | fzf)
+	if [ ! -z $FILE ]; then
+		vim $FILE
+	fi
 }
 
 if [ $(which fzf) ]; then

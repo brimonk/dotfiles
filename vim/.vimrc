@@ -108,7 +108,7 @@ set laststatus=2 " Always show the status line
 " Format the status line
 set statusline=%<%f%h%m%r%=%{&ff}\ %l\ %c\ %P
 
-set textwidth=100
+set textwidth=0
 
 " --
 " Section: Colors and Fonts
@@ -171,9 +171,15 @@ set nowrap " DO NOT WRAP LINES
 " Markdown
 au BufEnter,BufRead,BufNewFile *.md set nocindent
 au BufEnter,BufRead,BufNewFile *.md set syntax=markdown
-au BufEnter,BufRead,BufNewFile *.md set textwidth=100
 
 " Better C Syntax Handling
+
+if hostname == "azpubsub-server"
+	au BufEnter,BufRead,BufNewFile *.[ch] setlocal shiftwidth=4 softtabstop=4 expandtab
+	au BufEnter,BufRead,BufNewFile *.cpp setlocal shiftwidth=4 softtabstop=4 expandtab
+	au BufEnter,BufRead,BufNewFile *.hpp setlocal shiftwidth=4 softtabstop=4 expandtab
+endif
+
 au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
 au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro

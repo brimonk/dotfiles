@@ -1,9 +1,29 @@
 #!/usr/bin/env bash
 # Brian Chrzanowski
-# 2021-03-09 15:32:37
+# 2022-04-07 02:17:00
 #
-# Upload Function
+# Saves pastes locally with a UUID, and uploads them to the microsoft paste server.
+# Additionally, keeps a manifest so the linkage between local file name and paste.microsoft.com can
+# be kept in alignment.
+
+mkdir -p $HOME/.pastes
 
 [ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
-cat $input | curl --data-binary @- https://paste.chrzanowski.me/upload
+
+ID=$(uuidgen.sh)
+
+cat $input > $HOME/.pastes/$ID
+
+[ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
+curl --data-binary @- https://paste.chrzanowski.me/upload < $HOME/.pastes/$ID
+
+exit 0
+
+TEXT=$(cat $HOME/.pastes/$ID | sed 's/\n/\\\\n/g ; s/\t/\\\\t/g ; s/"/\\\\"/g')
+awk -v lang="text" -v text="\"${TEXT}\"" -v time="$(date +"%s")" \
+	'BEGIN { printf "{\"language\"=\"%s\",\"lastModifiedTime\"=\"%s\",\"text\"=\"%s\"}\n", lang, time, text }' | \
+	curl -v -X POST \
+		-H "Content-type: application/json" \
+		-b ~/.cookies \
+		-d @- https://paste.microsoft.com/api/create
 

@@ -36,7 +36,7 @@ function gr {
 
 # webserv: just serve the current directory
 function webserv {
-	python -m SimpleHTTPServer
+	python3 -m http.server
 }
 
 # notes: opens up $HOME/.notes in the $EDITOR for note taking
