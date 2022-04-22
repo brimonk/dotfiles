@@ -7,7 +7,7 @@ DEP=$(OBJ:.o=.d) # one dependency file for each source
 
 .PHONY: all
 
-all: bin/bjourn
+all: bin/bjourn bin/project
 
 %.d: %.c
 	@$(CC) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
@@ -20,3 +20,5 @@ all: bin/bjourn
 bin/bjourn: src/bjourn.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LINKER)
 
+bin/project: src/project.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LINKER)
