@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -59,9 +60,19 @@
 
 unsigned int flags = 0;
 
+void strtoupper(char *s)
+{
+    for (; *s; s++)
+        *s = toupper(*s);
+}
+
 // PrintUsage: prints usage information into the file
 void PrintUsage(char *fname)
 {
+    struct tm curr;
+    time_t t;
+    char tbuf[BUFSMALL];
+
 	FILE *fp = fopen(fname, "a");
 	if (fp == NULL) {
 		return;
@@ -81,6 +92,23 @@ void PrintUsage(char *fname)
 	fprintf(fp, "#\tD: defer this item for next month\n");
 	fprintf(fp, "#\tM: migrate this item for the future month specified\n");
 	fprintf(fp, "#\n");
+	fprintf(fp, "# Next Week Dates:\n");
+
+    t = time(NULL);
+
+    for (curr = *localtime(&t); curr.tm_wday != 1; mktime(&curr)) {
+        curr.tm_mday++;
+    }
+
+    while (1 <= curr.tm_wday && curr.tm_wday <= 5) {
+        strftime(tbuf, sizeof tbuf, "%Y-%m-%d %a", &curr);
+        strtoupper(tbuf);
+
+        fprintf(fp, "# %s\n", tbuf);
+
+        curr.tm_mday++;
+        mktime(&curr);
+    }
 
 	fclose(fp);
 }
@@ -88,7 +116,7 @@ void PrintUsage(char *fname)
 int DoTheThing()
 {
 	char path[PATH_MAX];
-	char cmd[BUFSMALL];
+	char cmd[PATH_MAX * 2];
 
 	strcpy(path, "/tmp/tmp.XXXXXX");
 
