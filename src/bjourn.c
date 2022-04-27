@@ -56,14 +56,101 @@
 #define FLAG_VIEW_MONTH  (0x02)
 #define FLAG_VIEW_YEAR   (0x04)
 
-#define DEFAULT_BJOURN_LOCATION ("$HOME/.bjourn")
+#define FLAG_OUTPUT_HTML (0x10)
+
+#define DEFAULT_BJOURN_LOCATION "$HOME/.bjourn"
 
 unsigned int flags = 0;
 
+// getpath: get the path to the BJOURN file location
+int getpath(char *s, size_t n)
+{
+    FILE *fp = popen("echo \"" DEFAULT_BJOURN_LOCATION "\"", "r");
+    fgets(s, n, fp);
+    if (s[strlen(s) - 1] == '\n')
+        s[strlen(s) - 1] = '\0';
+    fclose(fp);
+    return 0;
+}
+
+// strtoupper: converts a whole string to uppercase
 void strtoupper(char *s)
 {
     for (; *s; s++)
         *s = toupper(*s);
+}
+
+// HTMLOutput: translate the bullet journal into HTML output
+int HTMLOutput(void)
+{
+    // NOTE (Brian) This HTML output is basically so we can copy / paste into OneNote.
+    //
+    // Here are the rules we're trying to implement:
+    // - date parts are bold
+    // - tasks get slotted into bulleted lists
+    // - completed tasks get striked through
+
+    int i;
+    int inpara = false;
+    int inlist = false;
+    char buf[BUFLARGE];
+    char *s;
+
+    getpath(buf, sizeof buf);
+
+    FILE *fp = fopen(buf, "rb");
+    if (fp == NULL) {
+        fprintf(stderr, "couldn't open bjourn file\n");
+        return 1;
+    }
+
+    printf("<html>\n");
+
+    s = buf;
+
+    for (i = 0; s == fgets(buf, sizeof buf, fp); i++) {
+        if (s[strlen(s) - 1] == '\n')
+            s[strlen(s) - 1] = '\0';
+
+        if (strlen(s) == 0) {
+            if (inlist) {
+                printf("</ul>\n");
+                inlist = false;
+            }
+
+            if (inpara) {
+                printf("</p>\n");
+                inpara = false;
+            }
+        }
+
+        if (s[0] == 'c' || s[0] == 't') {
+            if (!inpara) {
+                printf("<p>\n");
+                inpara = true;
+            }
+
+            if (!inlist) {
+                printf("<ul>\n");
+                inlist = true;
+            }
+
+            if (s[0] == 'c')
+                printf("<li><del>%s</del></li>\n", s + 2);
+            else
+                printf("<li>%s</li>\n", s + 2);
+        } else {
+            printf("%s<br>\n", s);
+        }
+
+        memset(buf, 0, sizeof buf);
+    }
+
+    printf("</html>\n");
+
+    fclose(fp);
+
+    return 0;
 }
 
 // PrintUsage: prints usage information into the file
@@ -113,7 +200,7 @@ void PrintUsage(char *fname)
 	fclose(fp);
 }
 
-int DoTheThing()
+int Editor()
 {
 	char path[PATH_MAX];
 	char cmd[PATH_MAX * 2];
@@ -144,13 +231,22 @@ int DoTheThing()
 
 int main(int argc, char **argv)
 {
-	int rc;
+	int i;
+    int rc = 0;
+    int flags = 0;
 
-	rc = DoTheThing();
-	if (rc < 0) {
-		return 1;
-	}
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--html") == 0) {
+            flags |= FLAG_OUTPUT_HTML;
+        }
+    }
 
-	return 0;
+    if (flags & FLAG_OUTPUT_HTML) {
+        rc = HTMLOutput();
+    } else {
+        rc = Editor();
+    }
+
+	return rc;
 }
 
