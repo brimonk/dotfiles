@@ -129,3 +129,18 @@ if [ $(which fzf) ]; then
 	export -f fzvim
 fi
 
+# minutes: used to track meeting minutes
+function minutes()
+{
+	if [ "$#" -ne 1 ]; then
+		echo "USAGE: minutes <meetingname>"
+		return
+	fi
+
+	NAME=$1
+
+	while read line; do
+		echo $NAME [$(date +"%Y%m%dT%H:%M:%S")] $line >> "$HOME/.minutes"
+	done
+}
+
