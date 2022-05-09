@@ -19,8 +19,8 @@
 
 #define BUFLARGE (0x01 << 12)
 
-// ReadFromStream: reads all bytes from the incomming stream, into a buffer returned in 's'
-size_t ReadFromStream(FILE *fp, char **s)
+// readall: reads all bytes from the incomming stream, into a buffer returned in 's'
+size_t readall(FILE *fp, char **s)
 {
     size_t cap = 0;
     size_t len = 0;
@@ -38,10 +38,51 @@ size_t ReadFromStream(FILE *fp, char **s)
     return len;
 }
 
+// dateseq: returns true if the date part (year, month, day) are equivalent
+int dateseq(struct tm t1, struct tm t2)
+{
+    return t1.tm_year == t2.tm_year
+        && t1.tm_mon == t2.tm_mon
+        && t1.tm_mday == t2.tm_mday;
+}
+
+// cntdays: counts the days between the two dates
+int cntdays(struct tm t1, struct tm t2, int weekends)
+{
+    int days = 0;
+
+    while (!dateseq(t1, t2)) {
+        if (weekends) {
+            days++;
+        } else {
+            if (!(t1.tm_wday == 0 || t1.tm_wday == 6))
+                days++;
+        }
+
+        t1.tm_mday++;
+        mktime(&t1);
+    }
+
+    return days;
+}
+
+// cntlines: counts the lines in the null terminated strings
+int cntlines(char *s)
+{
+    int lines = 0;
+    while (*s) {
+        if (*s == '\n')
+            lines++;
+        s++;
+    }
+    return lines + 1;
+}
+
 int main(int argc, char **argv)
 {
     struct tm curr, from, to;
     time_t t;
+
     int days = 0;
     int weekends = 0;
 
@@ -54,41 +95,39 @@ int main(int argc, char **argv)
 
     strptime("2022-05-31 17:00:00", "%Y-%m-%d %H:%M:%S", &to);
 
-    // NOTE We really want to count the hours. Count the days first because that number * 8 will be
-    // how many working hours you have.
+    days = cntdays(from, to, weekends);
+    int seconds = 3600 * 8 * days; // compute seconds per task, assume 8 hours per day
 
-    for (days = 0, curr = from; mktime(&curr) <= mktime(&to); curr.tm_mday++) {
-        while (!weekends && (curr.tm_wday == 0 || curr.tm_wday == 6)) {
-            curr.tm_mday++;
-            mktime(&curr);
-        }
-        printf("Curr: %s", asctime(&curr));
-        days++;
-    }
-
-    int totalhours = days * 8;
     char *input = NULL;
 
-    ReadFromStream(stdin, &input);
+    readall(stdin, &input);
 
-    int lines = 0;
-    char *s = NULL;
-
-    while ((s = strchr((s == NULL ? input : s), '\n')) != NULL)
-        lines++, s++;
-
-    int hourspertask = totalhours / lines;
-    s = NULL;
+    int lines = cntlines(input);
+    int seconds_per_task = seconds / lines;
 
     char buf[BUFLARGE];
     curr = from;
+    char *s = NULL;
 
     for (int i = 0; i < lines; i++) {
-        // determine the delivery date and time
-        curr.tm_hour += hourspertask;
+        int remaining_per_period = seconds_per_task;
+
+        struct tm eod = curr;
+
+        eod.tm_hour = 17; // EOD is 5pm
+        eod.tm_min = 0;
+        eod.tm_sec = 0;
+
+        time_t t1 = mktime(&curr);
+        time_t t2 = mktime(&eod);
+
+        double diff = difftime(t1, t2);
+
+        // NOTE (Brian) now that we have the difference between now and the EOD
+
+        curr.tm_sec += seconds_per_task;
         mktime(&curr);
 
-        // get the task to complete from the line
         s = strchr((s == NULL ? input : s), '\n');
 
         strftime(buf, sizeof buf, "%Y-%m-%d %H:%M:%S", &curr);
