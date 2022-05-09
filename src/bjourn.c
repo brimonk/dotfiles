@@ -73,6 +73,22 @@ int getpath(char *s, size_t n)
     return 0;
 }
 
+// cnt_lines: counts the lines in the specified file (calls wc)
+int cnt_lines(char *s)
+{
+    char buf[1024];
+
+    int lines = 0;
+
+    snprintf(buf, sizeof buf, "wc -l %s", s);
+    FILE *fp = popen(buf, "r");
+    fgets(buf, sizeof buf, fp);
+    sscanf(buf, "%d", &lines);
+    fclose(fp);
+
+    return lines;
+}
+
 // strtoupper: converts a whole string to uppercase
 void strtoupper(char *s)
 {
@@ -228,6 +244,8 @@ int Editor()
 	char path[PATH_MAX];
 	char cmd[PATH_MAX * 2];
 
+    int lines;
+
 	strcpy(path, "/tmp/tmp.XXXXXX");
 
 	int fd = mkstemp(path);
@@ -238,12 +256,14 @@ int Editor()
 
 	close(fd);
 
+    lines = cnt_lines(DEFAULT_BJOURN_LOCATION);
+
 	snprintf(cmd, sizeof cmd, "grep -v '^#' < \"%s\" > \"%s\"", DEFAULT_BJOURN_LOCATION, path);
 	system(cmd);
 
 	PrintUsage(path);
 
-	snprintf(cmd, sizeof cmd, "$EDITOR \"%s\"", path);
+	snprintf(cmd, sizeof cmd, "$EDITOR +%d \"%s\"", lines, path);
 	system(cmd);
 
 	snprintf(cmd, sizeof cmd, "grep -v '^#' < \"%s\" > \"%s\"", path, DEFAULT_BJOURN_LOCATION);
