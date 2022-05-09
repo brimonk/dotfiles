@@ -153,12 +153,39 @@ int HTMLOutput(void)
     return 0;
 }
 
+void RewindToDay(struct tm *curr, int day)
+{
+    for (; curr->tm_wday != day; mktime(curr))
+        curr->tm_mday--;
+}
+
+void FastForwardToDay(struct tm *curr, int day)
+{
+    for (; curr->tm_wday != day; mktime(curr))
+        curr->tm_mday++;
+}
+
+// PrintWeekdays: prints the weekdays (mon - fri) using curr and fp
+void PrintWeekdays(FILE *fp, struct tm *curr)
+{
+    char tbuf[BUFSMALL];
+
+    while (1 <= curr->tm_wday && curr->tm_wday <= 5) {
+        strftime(tbuf, sizeof tbuf, "%Y-%m-%d %a", curr);
+        strtoupper(tbuf);
+
+        fprintf(fp, "# %s\n", tbuf);
+
+        curr->tm_mday++;
+        mktime(curr);
+    }
+}
+
 // PrintUsage: prints usage information into the file
 void PrintUsage(char *fname)
 {
     struct tm curr;
     time_t t;
-    char tbuf[BUFSMALL];
 
 	FILE *fp = fopen(fname, "a");
 	if (fp == NULL) {
@@ -179,23 +206,19 @@ void PrintUsage(char *fname)
 	fprintf(fp, "#\tD: defer this item for next month\n");
 	fprintf(fp, "#\tM: migrate this item for the future month specified\n");
 	fprintf(fp, "#\n");
-	fprintf(fp, "# Next Week Dates:\n");
 
     t = time(NULL);
 
-    for (curr = *localtime(&t); curr.tm_wday != 1; mktime(&curr)) {
-        curr.tm_mday++;
-    }
+    curr = *localtime(&t);
 
-    while (1 <= curr.tm_wday && curr.tm_wday <= 5) {
-        strftime(tbuf, sizeof tbuf, "%Y-%m-%d %a", &curr);
-        strtoupper(tbuf);
+    fprintf(fp, "# This Week:\n");
+    RewindToDay(&curr, 1);
+    PrintWeekdays(fp, &curr);
+	fprintf(fp, "#\n");
 
-        fprintf(fp, "# %s\n", tbuf);
-
-        curr.tm_mday++;
-        mktime(&curr);
-    }
+	fprintf(fp, "# Next Week:\n");
+    FastForwardToDay(&curr, 1);
+    PrintWeekdays(fp, &curr);
 
 	fclose(fp);
 }
