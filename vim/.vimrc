@@ -123,9 +123,11 @@ end
 set t_Co=256
 
 set background=dark
-colorscheme default
-" iceberg looks better in gvim, default is just fine for the term
-" colorscheme iceberg
+if has("win32")
+	colorscheme papercolor
+else
+	colorscheme default
+end
 hi Visual term=reverse ctermbg=DarkGray
 
 " create an indicator at 80 chars
