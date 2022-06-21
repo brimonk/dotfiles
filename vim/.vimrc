@@ -8,6 +8,7 @@ call plug#begin("~/.vim/plugged")
 " check if we're on the work machine
 let hostname = substitute(system('hostname'), '\n', '', '')
 if hostname == "brian-kla"
+	" This is legacy stuff. I'm not sure how much we'll need this for MS...
 	" install all of the c# typescript plugins we'd ever want
 
 	" the main omnisharp plugin
@@ -44,7 +45,7 @@ call plug#end()
 
 com! UUID exe "normal! i".system('uuidgen | tr "[:upper:]" "[:lower:]" | tr -d "\n"')
 
-set nofixendofline
+" set nofixendofline
 
 " --
 " Section: General
@@ -119,13 +120,19 @@ else
 	set guifont=FreeMono\ 12
 end
 
-set background=dark
 set t_Co=256
-colorscheme default
-hi Visual term=reverse ctermbg=darkgray
+
+set background=dark
+if has("win32")
+	colorscheme papercolor
+else
+	colorscheme default
+end
+hi Visual term=reverse ctermbg=DarkGray
 
 " create an indicator at 80 chars
-set colorcolumn=80,100
+" set colorcolumn=80,100
+set colorcolumn=100
 highlight ColorColumn ctermbg=DarkGray
 if has("win32")
 	highlight ColorColumn ctermbg=DarkGray guibg=#3d3d3d
@@ -136,6 +143,7 @@ set encoding=utf8
 
 " Use Unix as the standard file type, then dos, then mac
 set ffs=unix,dos,mac
+set ff=unix
 
 set formatoptions=tcqnj
 
@@ -164,13 +172,24 @@ set nowrap " DO NOT WRAP LINES
 
 " Markdown
 au BufEnter,BufRead,BufNewFile *.md set nocindent
-au BufEnter,BufRead,BufNewFile *.md set textwidth=100
+au BufEnter,BufRead,BufNewFile *.md set syntax=markdown
 
 " Better C Syntax Handling
+
+if hostname == "azpubsub-server"
+	au BufEnter,BufRead,BufNewFile *.[ch] setlocal shiftwidth=4 softtabstop=4 expandtab
+	au BufEnter,BufRead,BufNewFile *.cpp setlocal shiftwidth=4 softtabstop=4 expandtab
+	au BufEnter,BufRead,BufNewFile *.hpp setlocal shiftwidth=4 softtabstop=4 expandtab
+endif
+
 au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
 au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro
-au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,:0,l1
+au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,l1
+
+" notes should be markdown oriented, without the extension
+au BufEnter,BufRead,BufNewFile $HOME/.notes set syntax=markdown
+au BufEnter,BufRead,BufNewFile $HOME/.notes set autoindent
 
 " If we're working in C#, Typescript, HTML, or CSS, set the company
 " tab settings so we don't make anyone angry in a PR
@@ -202,7 +221,7 @@ au BufEnter *.asm set fo+=ro
 au BufEnter *.asm set cindent
 
 " Better Markdown Behavior
-autocmd BufRead,BufNewFile *.markdown,*.mdown,*.mkd,*.mkdn,*.md  setf markdown
+autocmd BufRead,BufNewFile *.markdown,*.mdown,*.mkd,*.mkdn,*.md setf markdown
 
 " work - indentation
 autocmd BufRead,BufNewFile *.css  setlocal shiftwidth=4 softtabstop=4 expandtab
@@ -222,17 +241,21 @@ autocmd BufRead,BufNewFile *.sql setlocal cindent
 autocmd BufRead,BufNewFile *.sql setlocal fo+=ro
 autocmd BufRead,BufNewFile *.sql setlocal cinoptions+=j1,J1,(1s
 
-" work - ts
+" KLA Config Bits
 autocmd BufRead,BufNewFile *.ts setlocal shiftwidth=4 softtabstop=4 expandtab
 autocmd BufRead,BufNewFile *.ts setlocal cindent
 autocmd BufRead,BufNewFile *.ts setlocal fo+=ro
 autocmd BufRead,BufNewFile *.ts setlocal cinoptions=j1,J1,(1s
 
-" work - js
 autocmd BufRead,BufNewFile *.js setlocal shiftwidth=4 softtabstop=4 expandtab
 autocmd BufRead,BufNewFile *.js setlocal cindent
 autocmd BufRead,BufNewFile *.js setlocal fo+=ro
-autocmd BufRead,BufNewFile *.ts setlocal cinoptions=j1,J1,(1s
+autocmd BufRead,BufNewFile *.js setlocal cinoptions=j1,J1,(1s
+
+autocmd BufRead,BufNewFile *.json setlocal shiftwidth=4 softtabstop=4 expandtab
+autocmd BufRead,BufNewFile *.json setlocal cindent
+autocmd BufRead,BufNewFile *.json setlocal fo+=ro
+autocmd BufRead,BufNewFile *.json setlocal cinoptions=j1,J1,(1s
 
 " Honestly, webdev isn't all that bad...
 autocmd BufRead,BufNewFile *.ejs  set filetype=html

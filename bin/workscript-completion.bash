@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
-complete -f -W "reap push azlogin pop update mostrecent listmigrations trigger buildall newdb project todo" workscript
-
+complete -f -W \
+	"push pop update mostrecent buildall mkcontainer newdb azlogin reap indexify forktree" \
+	workscript

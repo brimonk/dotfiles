@@ -1,29 +1,27 @@
-CC=cc
-LINKER=-ldl -lm -lreadline
-FLAGS=-Wall -g3 -march=native
-TARGET=bin/jankometer
-SRC=$(wildcard src/*.c)
+CC=gcc
+LINKER=-lm -ldl -lpthread
+CFLAGS=-Wall -g3 -march=native
+SRC=src/lump.c src/main.c src/sys_linux.c src/molttest.c
 OBJ=$(SRC:.c=.o)
 DEP=$(OBJ:.o=.d) # one dependency file for each source
 
-all: $(TARGET)
+.PHONY: all
+
+all: bin/bjourn bin/project bin/slides
 
 %.d: %.c
-	@$(CC) $(FLAGS) $< -MM -MT $(@:.d=.o) >$@
+	@$(CC) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
 
 %.o: %.c
-	$(CC) -c $(FLAGS) $(PREPROCESSPARMS) -o $@ $<
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 -include $(DEP)
 
-$(TARGET): $(OBJ)
-	$(CC) $(FLAGS) -o $(TARGET) $(OBJ) $(LINKER)
+bin/bjourn: src/bjourn.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LINKER)
 
-clean: clean-obj clean-bin
+bin/project: src/project.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LINKER)
 
-clean-obj:
-	rm -f $(OBJ) $(DEP)
-	
-clean-bin:
-	rm -f $(shell find . -maxdepth 1 -executable -type f)
-
+bin/slides: src/slides.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LINKER)

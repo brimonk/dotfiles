@@ -40,7 +40,7 @@ case "$TERM" in
     xterm-color) color_prompt=yes;;
 esac
 
-# - set prompt
+# prompt
 export PS1="\u@\h : \W \\$ "
 
 # - enable completion, if available
@@ -106,6 +106,41 @@ function mtest
 		[[ $? -ne 0 ]] && return 0
 
 		[[ $UANS -ne $ANS ]] && echo "Wrong. $(printf '0x%02x\n' $ANS)"
+	done
+}
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+function fzcd() {
+	cd $(find . -type d | fzf)
+}
+
+function fzvim() {
+	FILE=$(find . -type f | fzf)
+	if [ ! -z $FILE ]; then
+		vim $FILE
+	fi
+}
+
+if [ $(which fzf) ]; then
+	export -f fzcd
+	export -f fzvim
+fi
+
+# minutes: used to track meeting minutes
+function minutes()
+{
+	if [ "$#" -ne 1 ]; then
+		echo "USAGE: minutes <meetingname>"
+		return
+	fi
+
+	NAME=$1
+
+	while read line; do
+		echo $NAME [$(date +"%Y%m%dT%H:%M:%S")] $line >> "$HOME/.minutes"
 	done
 }
 

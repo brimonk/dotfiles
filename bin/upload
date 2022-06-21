@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 # Brian Chrzanowski
-# 2021-03-09 15:32:37
+# 2022-04-07 02:17:00
 #
-# Upload Function
+# Saves pastes locally with a UUID, and uploads them to the microsoft paste server.
+# Additionally, keeps a manifest so the linkage between local file name and paste.microsoft.com can
+# be kept in alignment.
+
+if [ $(false) ]; then
+	if [ -f "$HOME/.upload_specific" ]; then
+		$HOME/.upload_specific
+		exit 0
+	fi
+fi
 
 [ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
 cat $input | curl --data-binary @- https://paste.chrzanowski.me/upload
-
