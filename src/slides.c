@@ -6,14 +6,20 @@
 // This program will read in a file marked down with a markdown-like syntax, and produce a
 // completely standalone slideshow contained within a single HTML source file. This file can then
 // be transmitted anywhere, and loaded into a browser for viewing pleasure.
-//
-// The document structure is somewhat related to 
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+
+struct state {
+	int isbold;
+	int isital;
+	int isuline;
+};
+
+struct state gstate;
 
 // ltrim: trims whitespace from the left of the string
 char *ltrim(char *s)
@@ -60,8 +66,8 @@ int is_header(char *s)
     return level;
 }
 
-// is_listo: returns true if this line is part of an ordered list
-int is_listo(char *s)
+// is_olist: returns true if this line is part of an ordered list
+int is_olist(char *s)
 {
     // search for the pattern, '\d*'
     while (*s != '.')
@@ -70,28 +76,64 @@ int is_listo(char *s)
     return true;
 }
 
-// is_listu: returns true if this line is part of an unordered list
-int is_listu(char *s)
+// is_ulist: returns true if this line is part of an unordered list
+int is_ulist(char *s)
 {
-    return *s == '*';
+    return (*s == '*' || *s == '-' || *s == '+') && *(s + 1) == ' ';
 }
 
 // is_code: returns true if this line is code
-int is_code(char *s, int incode)
+int is_code(char *s)
 {
-    int lineterm = strcmp(s, "```") == 0;
-    int codeindent = strcmp(s, "    ") == 0;
+    return strcmp(s, "```") == 0 || strcmp(s, "    ") == 0;
+}
 
-    if (codeindent) {
-        return true;
-    } else if (lineterm && incode) {
-        return false;
-    } else if (lineterm && !incode) {
-        return true;
-    } else {
-        return false;
-    }
+// dump_js: dumps out javascript for use in controlling the slideshow
+void dump_js()
+{
+}
 
+int write_str(char *s)
+{
+	char *t;
+
+	for (t = s; *s; s++) {
+		switch (*s) {
+			case '\\': // escape
+				break;
+			case '*': // bold / ital
+				if (*(s + 1) && *(s + 1) == '*') { // bold
+					if (gstate.isbold) {
+						printf("</b>");
+					} else {
+						printf("<b>");
+					}
+					gstate.isbold = !gstate.isbold;
+					// increment 's', we basically already consumed another character
+					s++;
+				} else { // ital
+					if (gstate.isital) {
+						printf("</i>");
+					} else {
+						printf("<i>");
+					}
+					gstate.isital = !gstate.isital;
+				}
+				break;
+			case '_': // underline
+				if (gstate.isuline) {
+					printf("</u>");
+				} else {
+					printf("<u>");
+				}
+				gstate.isuline = !gstate.isuline;
+				break;
+			default:
+				putchar(*s);
+		}
+	}
+
+	return s - t;
 }
 
 // base64e: base64 encode
@@ -111,7 +153,7 @@ int main(int argc, char **argv)
     int prev;
     int z;
 
-    if (argc == 2) {
+    if (argc < 3) {
         freopen(argv[1], "rb", stdin);
     }
 
@@ -122,24 +164,43 @@ int main(int argc, char **argv)
 
     printf("<body>\n");
 
+	memset(&gstate, 0, sizeof gstate);
+
     while (buf == fgets(buf, sizeof buf, stdin)) {
         len = strlen(buf);
 
         if (buf[len - 1] == '\n')
             buf[len - 1] = '\0';
 
-        prev = incode;
-        incode = is_code(s, incode);
-
-        if (incode && incode == prev) {
-            printf("%s\n", buf);
-        } else if (incode && !prev) {
-            printf("<code><pre>");
-        } else if (!incode && prev) {
-            printf("</pre></code>");
-        }
-
         s = trim(buf);
+
+		if (strlen(s) == 0) {
+			if (inol) {
+				inol = false;
+				printf("</ol>\n");
+				continue;
+			}
+			if (inul) {
+				inul = false;
+				printf("</ul>\n");
+				continue;
+			}
+		}
+
+		if (is_code(s)) {
+			if (incode) {
+				printf("</pre></code>\n");
+			} else {
+				printf("<code><pre>");
+			}
+			incode = !incode;
+			continue;
+		} else {
+			if (incode) {
+				printf("%s\n", buf); // maintain whitespace by using 'buf'
+				continue;
+			}
+		}
 
         z = is_header(s);
         if (0 < z) {
@@ -147,10 +208,44 @@ int main(int argc, char **argv)
             continue;
         }
 
-        printf("%s\n", buf);
+		if (is_olist(s)) {
+			if (!inol) {
+				printf("<ol>\n");
+				inol = true;
+			}
+			printf("<li>");
+			write_str(s + 2);
+			printf("</li>");
+			continue;
+		} else {
+			if (inol) {
+				printf("</ol>\n");
+				inol = false;
+			}
+		}
+
+		if (is_ulist(s)) {
+			if (!inul) {
+				printf("<ul>\n");
+				inul = true;
+			}
+			printf("<li>");
+			write_str(s + 2);
+			printf("</li>");
+			continue;
+		} else {
+			if (inul) {
+				printf("<ul>\n");
+				inul = false;
+			}
+		}
+
+		write_str(s);
     }
 
     printf("</body>\n");
+
+	dump_js();
 
     printf("</html>\n");
 
