@@ -87,7 +87,7 @@ void dump_css()
 	puts("}");
 	puts("");
 	puts("/* Hide the images by default */");
-	puts(".mySlides {");
+	puts(".slides {");
 	puts("  display: none;");
 	puts("}");
 	puts("");
@@ -113,10 +113,10 @@ void dump_css()
 	puts("  border-radius: 3px 0 0 3px;");
 	puts("}");
 	puts("");
-	puts("/* On hover, add a black background color with a little bit see-through */");
-	puts(".prev:hover, .next:hover {");
-	puts("  background-color: rgba(0,0,0,0.8);");
-	puts("}");
+	// puts("/* On hover, add a black background color with a little bit see-through */");
+	// puts(".prev:hover, .next:hover {");
+	// puts("  background-color: rgba(0,0,0,0.8);");
+	// puts("}");
 	puts("");
 	puts("/* Caption text */");
 	puts(".text {");
@@ -138,21 +138,9 @@ void dump_css()
 	puts("  top: 0;");
 	puts("}");
 	puts("");
-	puts("/* The dots/bullets/indicators */");
-	puts(".dot {");
-	puts("  cursor: pointer;");
-	puts("  height: 15px;");
-	puts("  width: 15px;");
-	puts("  margin: 0 2px;");
-	puts("  background-color: #bbb;");
-	puts("  border-radius: 50%;");
-	puts("  display: inline-block;");
-	puts("  transition: background-color 0.6s ease;");
-	puts("}");
-	puts("");
-	puts(".active, .dot:hover {");
-	puts("  background-color: #717171;");
-	puts("}");
+	// puts(".active, .dot:hover {");
+	// puts("  background-color: #717171;");
+	// puts("}");
 	puts("");
 	puts("/* Fading animation */");
 	puts(".fade {");
@@ -171,7 +159,15 @@ void dump_css()
 void dump_js()
 {
 	puts("<script>");
-	puts("let slide = 1;");
+	puts("let slide = 0;");
+	puts("");
+	puts("function clamp(n, a, b) {");
+	puts("    if (n < a)");
+	puts("        return a;");
+	puts("    if (n > b)");
+	puts("        return b;");
+	puts("    return n;");
+	puts("}");
 	puts("");
 	puts("function next() {");
 	puts("    showslides(slide += 1);");
@@ -184,11 +180,26 @@ void dump_js()
 	puts("function showslides(n) {");
 	puts("    let i;");
 	puts("    let slides = document.getElementsByClassName('slides');");
-	puts("    if (n < 1)"); // quick clamp
-	puts("        slide = 1");
-	puts("    if (slides.length < n)");
-	puts("        slide = slides.length - 1");
+	puts("    n = clamp(n, 0, slides.length - 1);");
+	puts("    slide = n;");
+	puts("");
+	puts("    for (i = 0; i < slides.length; i++)");
+	puts("        slides[i].style.display = 'none';");
+	puts("");
+	puts("    slides[slide].style.display = 'block';");
+	puts("    slides[slide].className += ' active';");
 	puts("}");
+	puts("");
+	puts("document.addEventListener('keydown', (event) => {");
+	puts("    let key = event.key;");
+	puts("    const map = {");
+	puts("        ' ': next");
+	puts("        , 'ArrowLeft': prev");
+	puts("        , 'ArrowRight': next");
+	puts("    };");
+	puts("    if (map[key])");
+	puts("        map[key]();");
+	puts("}, false);");
 	puts("");
 	puts("showslides(slide);");
 	puts("</script>");
@@ -251,12 +262,13 @@ int main(int argc, char **argv)
     int inol = false;
     int inul = false;
     int incode = false;
-    int prev;
     int z;
 
     if (argc < 3) {
         freopen(argv[1], "rb", stdin);
     }
+
+	memset(&gstate, 0, sizeof gstate);
 
     printf("<!DOCTYPE html>\n");
     printf("<html lang=\"en-US\">\n");
@@ -267,7 +279,7 @@ int main(int argc, char **argv)
 
     printf("<body>\n");
 
-	memset(&gstate, 0, sizeof gstate);
+	puts("<div class=\"slideshow-container\">");
 
     while (buf == fgets(buf, sizeof buf, stdin)) {
         len = strlen(buf);
@@ -305,11 +317,14 @@ int main(int argc, char **argv)
 			}
 		}
 
-        z = is_header(s);
-        if (0 < z) {
+		if ((z = is_header(s))) { // everything is in the same slide until the next one, or we end
+			if (slide++) {
+				printf("</div>");
+			}
+			printf("<div class=\"slides fade\">");
             printf("<h%d>%s</h%d>\n", z, s + z + 1, z);
-            continue;
-        }
+			continue;
+		}
 
 		if (is_olist(s)) {
 			if (!inol) {
@@ -345,6 +360,10 @@ int main(int argc, char **argv)
 
 		write_str(s);
     }
+
+	puts("</div>"); // finish last slide we saw
+
+	puts("</div>"); // slideshow-container
 
 	dump_js();
 
