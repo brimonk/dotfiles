@@ -43,20 +43,6 @@ char *trim(char *s) { return ltrim(rtrim(s)); }
 
 void styles();
 
-void header()
-{
-    printf("<head>\n");
-    styles();
-    printf("</head>\n");
-}
-
-// styles: print styles out
-void styles()
-{
-    printf("<style>\n");
-    printf("</style>\n");
-}
-
 // is_header: returns greater than 0, for what header level this is, if it's a header
 int is_header(char *s)
 {
@@ -88,9 +74,124 @@ int is_code(char *s)
     return strcmp(s, "```") == 0 || strcmp(s, "    ") == 0;
 }
 
+void dump_css()
+{
+	puts("<style>");
+	puts("* {box-sizing:border-box}");
+	puts("");
+	puts("/* Slideshow container */");
+	puts(".slideshow-container {");
+	puts("  max-width: 1000px;");
+	puts("  position: relative;");
+	puts("  margin: auto;");
+	puts("}");
+	puts("");
+	puts("/* Hide the images by default */");
+	puts(".mySlides {");
+	puts("  display: none;");
+	puts("}");
+	puts("");
+	puts("/* Next & previous buttons */");
+	puts(".prev, .next {");
+	puts("  cursor: pointer;");
+	puts("  position: absolute;");
+	puts("  top: 50%;");
+	puts("  width: auto;");
+	puts("  margin-top: -22px;");
+	puts("  padding: 16px;");
+	puts("  color: white;");
+	puts("  font-weight: bold;");
+	puts("  font-size: 18px;");
+	puts("  transition: 0.6s ease;");
+	puts("  border-radius: 0 3px 3px 0;");
+	puts("  user-select: none;");
+	puts("}");
+	puts("");
+	puts("/* Position the 'next button' to the right */");
+	puts(".next {");
+	puts("  right: 0;");
+	puts("  border-radius: 3px 0 0 3px;");
+	puts("}");
+	puts("");
+	puts("/* On hover, add a black background color with a little bit see-through */");
+	puts(".prev:hover, .next:hover {");
+	puts("  background-color: rgba(0,0,0,0.8);");
+	puts("}");
+	puts("");
+	puts("/* Caption text */");
+	puts(".text {");
+	puts("  color: #f2f2f2;");
+	puts("  font-size: 15px;");
+	puts("  padding: 8px 12px;");
+	puts("  position: absolute;");
+	puts("  bottom: 8px;");
+	puts("  width: 100%;");
+	puts("  text-align: center;");
+	puts("}");
+	puts("");
+	puts("/* Number text (1/3 etc) */");
+	puts(".numbertext {");
+	puts("  color: #f2f2f2;");
+	puts("  font-size: 12px;");
+	puts("  padding: 8px 12px;");
+	puts("  position: absolute;");
+	puts("  top: 0;");
+	puts("}");
+	puts("");
+	puts("/* The dots/bullets/indicators */");
+	puts(".dot {");
+	puts("  cursor: pointer;");
+	puts("  height: 15px;");
+	puts("  width: 15px;");
+	puts("  margin: 0 2px;");
+	puts("  background-color: #bbb;");
+	puts("  border-radius: 50%;");
+	puts("  display: inline-block;");
+	puts("  transition: background-color 0.6s ease;");
+	puts("}");
+	puts("");
+	puts(".active, .dot:hover {");
+	puts("  background-color: #717171;");
+	puts("}");
+	puts("");
+	puts("/* Fading animation */");
+	puts(".fade {");
+	puts("  animation-name: fade;");
+	puts("  animation-duration: 1.5s;");
+	puts("}");
+	puts("");
+	puts("@keyframes fade {");
+	puts("  from {opacity: .4}");
+	puts("  to {opacity: 1}");
+	puts("}");
+	puts("</style>");
+}
+
 // dump_js: dumps out javascript for use in controlling the slideshow
 void dump_js()
 {
+	puts("<script>");
+	puts("let slide = 1;");
+	puts("");
+	puts("function next() {");
+	puts("    showslides(slide += 1);");
+	puts("}");
+	puts("");
+	puts("function prev() {");
+	puts("    showslides(slide -= 1);");
+	puts("}");
+	puts("");
+	puts("function showslides(n) {");
+	puts("    let i;");
+	puts("    let slides = document.getElementsByClassName('slides');");
+	puts("    if (n < 1)"); // quick clamp
+	puts("        slide = 1");
+	puts("    if (slides.length < n)");
+	puts("        slide = slides.length - 1");
+	puts("}");
+	puts("");
+	puts("showslides(slide);");
+	puts("</script>");
 }
 
 int write_str(char *s)
@@ -160,7 +261,9 @@ int main(int argc, char **argv)
     printf("<!DOCTYPE html>\n");
     printf("<html lang=\"en-US\">\n");
 
-    header();
+	puts("<header>");
+	dump_css();
+	puts("</header>");
 
     printf("<body>\n");
 
@@ -243,9 +346,9 @@ int main(int argc, char **argv)
 		write_str(s);
     }
 
-    printf("</body>\n");
-
 	dump_js();
+
+    printf("</body>\n");
 
     printf("</html>\n");
 
