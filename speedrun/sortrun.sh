@@ -11,12 +11,12 @@ rm -f ${RUNFILE%.c} *.c Makefile
 
 algorithms=(
 	"bubble"
-	# "selection"
-	# "insertion"
-	# "quick"
-	# "shell"
-	# "merge"
-	# "merge_inplace"
+	"selection"
+	"insertion"
+	"quick"
+	"shell"
+	"merge"
+	"merge_inplace"
 )
 
 cat << EOF >> $RUNFILE
