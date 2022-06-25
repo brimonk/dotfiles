@@ -14,9 +14,7 @@ algorithms=(
 	"selection"
 	"insertion"
 	"quick"
-	"shell"
 	"merge"
-	"merge_inplace"
 )
 
 cat << EOF >> $RUNFILE
