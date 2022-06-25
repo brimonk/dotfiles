@@ -5,7 +5,7 @@
 #
 # You should really change it to do this, when you're reading this in the future.
 
-RUNFILE="sortrun.c"
+RUNFILE="${0%.sh}.c"
 
 rm -f ${RUNFILE%.c} *.c Makefile
 
