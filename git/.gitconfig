@@ -8,6 +8,9 @@
 [core]
 	pager="less -FRX"
 
+[init]
+	defaultBranch=master
+
 [merge]
 	# for help with this, read https://stackoverflow.com/questions/161813/how-to-resolve-merge-conflicts-in-git-repository
 	tool=vimdiff
@@ -68,3 +71,5 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+[pull]
+	rebase = false
