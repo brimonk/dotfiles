@@ -7,6 +7,8 @@
 # NOTE (Brian)
 # jq is cool, but different than like, every other shell utility, rip
 
+set -e
+
 # usage : prints usage info
 function usage
 {
@@ -22,6 +24,8 @@ TEXT0=""
 TEXT1=""
 
 MEMES=$(curl -s https://api.imgflip.com/get_memes)
+
+echo "$MEMES" | jq ".data.memes[] | { name: .name }"
 
 while (( "$#" ))
 do

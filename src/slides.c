@@ -74,10 +74,17 @@ int is_code(char *s)
     return strcmp(s, "```") == 0 || strcmp(s, "    ") == 0;
 }
 
-void dump_css()
+// dump_head: produce the <head></head> content for the output slideshow
+void dump_head()
 {
+    puts("<title>A Brian Slideshow</title>");
+    puts("<link rel=\"shortcut icon\" href=\"https://chrzanowski.me/favicon.ico\"/>");
 	puts("<style>");
-	puts("* {box-sizing:border-box}");
+	puts("* {");
+    puts("  box-sizing:border-box;");
+    puts("  font: font-family: 'Lucida Sans Unicode', sans-serif;");
+    puts("  font-size: 1.2em;");
+    puts("}");
 	puts("");
 	puts("/* Slideshow container */");
 	puts(".slideshow-container {");
@@ -107,16 +114,17 @@ void dump_css()
 	puts("  user-select: none;");
 	puts("}");
 	puts("");
+	puts("/* make the slideshow white on black */");
+	puts("body {");
+    puts("  background-color: #101010;");
+	puts("  color: #ffffff;");
+	puts("}");
+    puts("");
 	puts("/* Position the 'next button' to the right */");
 	puts(".next {");
 	puts("  right: 0;");
 	puts("  border-radius: 3px 0 0 3px;");
 	puts("}");
-	puts("");
-	// puts("/* On hover, add a black background color with a little bit see-through */");
-	// puts(".prev:hover, .next:hover {");
-	// puts("  background-color: rgba(0,0,0,0.8);");
-	// puts("}");
 	puts("");
 	puts("/* Caption text */");
 	puts(".text {");
@@ -136,21 +144,6 @@ void dump_css()
 	puts("  padding: 8px 12px;");
 	puts("  position: absolute;");
 	puts("  top: 0;");
-	puts("}");
-	puts("");
-	// puts(".active, .dot:hover {");
-	// puts("  background-color: #717171;");
-	// puts("}");
-	puts("");
-	puts("/* Fading animation */");
-	puts(".fade {");
-	puts("  animation-name: fade;");
-	puts("  animation-duration: 1.5s;");
-	puts("}");
-	puts("");
-	puts("@keyframes fade {");
-	puts("  from {opacity: .4}");
-	puts("  to {opacity: 1}");
 	puts("}");
 	puts("</style>");
 }
@@ -189,6 +182,8 @@ void dump_js()
 	puts("    slides[slide].style.display = 'block';");
 	puts("    slides[slide].className += ' active';");
 	puts("}");
+	puts("");
+	puts("document.addEventListener('click', (e) => next());");
 	puts("");
 	puts("document.addEventListener('keydown', (event) => {");
 	puts("    let key = event.key;");
@@ -274,7 +269,7 @@ int main(int argc, char **argv)
     printf("<html lang=\"en-US\">\n");
 
 	puts("<header>");
-	dump_css();
+	dump_head();
 	puts("</header>");
 
     printf("<body>\n");

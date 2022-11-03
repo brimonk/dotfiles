@@ -125,18 +125,14 @@ set t_Co=256
 set background=dark
 if has("win32")
 	colorscheme papercolor
+	set guifont=Consolas:h12
 else
 	colorscheme default
+	set guifont=FreeMono\ 12
 end
-hi Visual term=reverse ctermbg=DarkGray
-
-" create an indicator at 80 chars
-" set colorcolumn=80,100
 set colorcolumn=100
-highlight ColorColumn ctermbg=DarkGray
-if has("win32")
-	highlight ColorColumn ctermbg=DarkGray guibg=#3d3d3d
-end
+highligh Visual term=reverse ctermbg=DarkGray
+highlight ColorColumn ctermbg=DarkGray guibg=#3d3d3d
 
 " Set utf8 as standard encoding
 set encoding=utf8
@@ -175,12 +171,6 @@ au BufEnter,BufRead,BufNewFile *.md set nocindent
 au BufEnter,BufRead,BufNewFile *.md set syntax=markdown
 
 " Better C Syntax Handling
-
-if hostname == "azpubsub-server"
-	au BufEnter,BufRead,BufNewFile *.[ch] setlocal shiftwidth=4 softtabstop=4 expandtab
-	au BufEnter,BufRead,BufNewFile *.cpp setlocal shiftwidth=4 softtabstop=4 expandtab
-	au BufEnter,BufRead,BufNewFile *.hpp setlocal shiftwidth=4 softtabstop=4 expandtab
-endif
 
 au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
@@ -298,12 +288,14 @@ try
 catch
 endtry
 
+" TAGS
+" Search from the CWD up to $HOME for a tags file to use
+set tags=./tags,tags;$HOME
 
 " --
 " Section: Mappings
 " --
 " Remap VIM 0 to first non-blank character
-map 0 ^
 
 " I fatfinger F1 all the time on my laptop
 map <F1> <nop>
@@ -335,3 +327,10 @@ set guioptions-=T " remove toolbar
 set guioptions-=r " remove right-hand scroll-bar
 set guioptions-=L " remove right-hand scroll-bar
 
+" CleanFile: cleans the file (removes trailing whitespace)
+function! CleanFile()
+    :%s/\s\+$//e
+endfunction
+
+" exec the local vimrc
+source $HOME/.vimrc_local
