@@ -58,14 +58,14 @@
 
 #define FLAG_OUTPUT_HTML (0x10)
 
-#define DEFAULT_BJOURN_LOCATION "$HOME/.bjourn"
+#define DEFAULT_TODO_LOCATION "$HOME/.todo"
 
 unsigned int flags = 0;
 
-// getpath: get the path to the BJOURN file location
+// getpath: get the path to the TODO file location
 int getpath(char *s, size_t n)
 {
-    FILE *fp = popen("echo \"" DEFAULT_BJOURN_LOCATION "\"", "r");
+    FILE *fp = popen("echo \"" DEFAULT_TODO_LOCATION "\"", "r");
     fgets(s, n, fp);
     if (s[strlen(s) - 1] == '\n')
         s[strlen(s) - 1] = '\0';
@@ -116,7 +116,7 @@ int HTMLOutput(void)
 
     FILE *fp = fopen(buf, "rb");
     if (fp == NULL) {
-        fprintf(stderr, "couldn't open bjourn file\n");
+        fprintf(stderr, "couldn't open todo file\n");
         return 1;
     }
 
@@ -256,9 +256,9 @@ int Editor()
 
 	close(fd);
 
-    lines = cnt_lines(DEFAULT_BJOURN_LOCATION);
+    lines = cnt_lines(DEFAULT_TODO_LOCATION);
 
-	snprintf(cmd, sizeof cmd, "grep -v '^#' < \"%s\" > \"%s\"", DEFAULT_BJOURN_LOCATION, path);
+	snprintf(cmd, sizeof cmd, "grep -v '^#' < \"%s\" > \"%s\"", DEFAULT_TODO_LOCATION, path);
 	system(cmd);
 
 	PrintUsage(path);
@@ -266,7 +266,7 @@ int Editor()
 	snprintf(cmd, sizeof cmd, "$EDITOR +%d \"%s\"", lines, path);
 	system(cmd);
 
-	snprintf(cmd, sizeof cmd, "grep -v '^#' < \"%s\" > \"%s\"", path, DEFAULT_BJOURN_LOCATION);
+	snprintf(cmd, sizeof cmd, "grep -v '^#' < \"%s\" > \"%s\"", path, DEFAULT_TODO_LOCATION);
 	system(cmd);
 
 	return 0;

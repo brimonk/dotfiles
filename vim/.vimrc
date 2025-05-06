@@ -181,6 +181,9 @@ au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,l1
 au BufEnter,BufRead,BufNewFile $HOME/.notes set syntax=markdown
 au BufEnter,BufRead,BufNewFile $HOME/.notes set autoindent
 
+" forth is a better programming language than FORTRAN
+au BufEnter,BufRead,BufNewFile *.f set syntax=forth
+
 " If we're working in C#, Typescript, HTML, or CSS, set the company
 " tab settings so we don't make anyone angry in a PR
 au BufEnter *.cs set expandtab fo+=ro cindent
@@ -334,3 +337,6 @@ endfunction
 
 " exec the local vimrc
 source $HOME/.vimrc_local
+
+" disable zig fmt
+let g:zig_fmt_autosave = 0

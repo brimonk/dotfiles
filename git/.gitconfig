@@ -66,6 +66,8 @@
 
 	gr="!git rev-parse --show-toplevel"
 
+	poh="!git push origin HEAD"
+
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
@@ -77,45 +79,5 @@
 	ui = auto
 [safe]
 	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
-	directory = *
 [url "https://github.com"]
 	insteadOf = git://github.com
-[url "https://git.ti.com/git"]
-	insteadOf = git://git.ti.com
-[url "https://git.yoctoproject.org/meta-arago"]
-	insteadOf = http://arago-project.org/git/meta-arago
-[url "https://git.yoctoproject.org/meta-ti"]
-	insteadOf = http://arago-project.org/git/meta-ti
-[url "https://git.ti.com/arago-project/oe-layersetup"]
-	insteadOf = http://arago-project.org/git/projects/oe-layersetup
