@@ -1,0 +1,30 @@
+#!/usr/bin/sh
+# Use this script to leave some daily notes. The intention is to use this every single day to write
+# a small summary for tracking purposes.
+
+# create the file if it doesn't exist
+DAILY_SUMMARY_FILE="$HOME/.summary"
+if [ ! -f ${DAILY_SUMMARY_FILE} ]; then
+	touch ${DAILY_SUMMARY_FILE}
+fi
+
+# make a temporary file, and prepare it for daily summarizing
+TMPFILE=$(mktemp)
+cat >> ${TMPFILE} << 'EOF'
+# INSTRUCTIONS
+#
+# For the date/time below here, put a small summary about what you accomplished, who you helped,
+# what silly problems you encountered throughout the day, etc. This is not organized, though the
+# free-format can allow for a little bit of organization here. After you save the file, whatever is
+# NOT prefixed with a '#' at the start of the line will be discarded.
+EOF
+printf "%s %s\n" $(date +'%Y-%m-%d %H:%M:%S') >> ${TMPFILE}
+echo "" >> ${TMPFILE}
+
+# edit the darn thing
+$EDITOR ${TMPFILE}
+
+# after you 
+grep -v '^#' ${TMPFILE} >> ${DAILY_SUMMARY_FILE}
+
+rm -f ${TMPFILE}
