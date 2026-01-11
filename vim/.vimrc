@@ -2,46 +2,8 @@
 " Vim RC
 " TODO clean - this file's a mess
 
-" Plugin Section
-call plug#begin("~/.vim/plugged")
-
-" check if we're on the work machine
-let hostname = substitute(system('hostname'), '\n', '', '')
-if hostname == "brian-kla"
-	" This is legacy stuff. I'm not sure how much we'll need this for MS...
-	" install all of the c# typescript plugins we'd ever want
-
-	" the main omnisharp plugin
-	Plug 'OmniSharp/omnisharp-vim'
-
-	let g:OmniSharp_selector_ui = 'fzf'
-	let g:OmniSharp_selector_findusages = 'fzf'
-
-	let g:OmniSharp_popup_mappings = {
-		\ 'sigNext': '<C-n>',
-		\ 'sigPrev': '<C-p>',
-		\ 'lineDown': ['<C-e>', 'j'],
-		\ 'lineUp': ['<C-y>', 'k']
-	\}
-
-	let g:OmniSharp_popup_mappings.close = '<Esc>'
-
-	" Mappings, code-actions available flag and statusline integration
-	Plug 'nickspoons/vim-sharpenup'
-
-	" Linting/error highlighting
-	Plug 'dense-analysis/ale'
-	let g:ale_enabled = 0
-
-	" Vim FZF integration, used as OmniSharp selector
-	Plug 'junegunn/fzf'
-	Plug 'junegunn/fzf.vim'
-
-	" Autocompletion
-	Plug 'prabirshrestha/asyncomplete.vim'
-endif
-
-call plug#end()
+filetype plugin indent on
+syntax enable
 
 com! UUID exe "normal! i".system('uuidgen | tr "[:upper:]" "[:lower:]" | tr -d "\n"')
 
@@ -157,8 +119,7 @@ set smarttab
 " 1 tab == 4 'characters'
 set shiftwidth=4
 set tabstop=4
-set softtabstop=4
-set noexpandtab
+set expandtab
 
 set nowrap " DO NOT WRAP LINES
 
@@ -166,16 +127,23 @@ set nowrap " DO NOT WRAP LINES
 " Section: FileType Handling
 " --
 
+" Summary Stuff
+au BufEnter,BufRead,BufNewFile $HOME/.summary  set filetype=summary
+au BufEnter,BufRead,BufNewFile /tmp/.summary.* set filetype=summary
+
 " Markdown
 au BufEnter,BufRead,BufNewFile *.md set nocindent
 au BufEnter,BufRead,BufNewFile *.md set syntax=markdown
 
 " Better C Syntax Handling
-
-au BufEnter,BufRead,BufNewFile *.[ch] set syntax=on
+au BufEnter,BufRead,BufNewFile *.[ch] set syntax=c
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
 au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro
 au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,l1
+
+" Better Go Handling
+au BufEnter,BufRead,BufNewFile *.go set cindent
+au BufEnter,BufRead,BufNewFile *.go set fo+=ro
 
 " notes should be markdown oriented, without the extension
 au BufEnter,BufRead,BufNewFile $HOME/.notes set syntax=markdown
@@ -257,9 +225,7 @@ autocmd BufRead,BufNewFile *.ejs  set filetype=html
 autocmd BufRead,BufNewFile *.txt set fo-=ro
 
 " TOML File Syntax Highlighting
-augroup filetypedetect 
-  au! BufRead,BufNewFile *.toml set filetype=toml 
-augroup END 
+autocmd BufRead,BufNewFile *.toml set filetype=toml 
 
 " --
 " Section: Navigation
