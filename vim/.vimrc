@@ -70,7 +70,7 @@ set laststatus=2 " Always show the status line
 " Format the status line
 set statusline=%<%f%h%m%r%=%{&ff}\ %l\ %c\ %P
 
-set textwidth=0
+set textwidth=100
 
 " --
 " Section: Colors and Fonts
@@ -140,6 +140,12 @@ au BufEnter,BufRead,BufNewFile *.[ch] set syntax=c
 au BufEnter,BufRead,BufNewFile *.[ch] set cindent
 au BufEnter,BufRead,BufNewFile *.[ch] set fo+=ro
 au BufEnter,BufRead,BufNewFile *.[ch] set cinoptions=j1,J1,(1s,l1
+au BufEnter,BufRead,BufNewFile *.cpp set cindent
+au BufEnter,BufRead,BufNewFile *.cpp set fo+=ro
+au BufEnter,BufRead,BufNewFile *.cpp set cinoptions=j1,J1,(1s,l1
+au BufEnter,BufRead,BufNewFile *.hpp set cindent
+au BufEnter,BufRead,BufNewFile *.hpp set fo+=ro
+au BufEnter,BufRead,BufNewFile *.hpp set cinoptions=j1,J1,(1s,l1
 
 " Better Go Handling
 au BufEnter,BufRead,BufNewFile *.go set cindent

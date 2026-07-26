@@ -67,6 +67,7 @@
 	gr="!git rev-parse --show-toplevel"
 
 	poh="!git push origin HEAD"
+	fpoh="!git push --force-with-lease origin HEAD"
 
 [filter "lfs"]
 	clean = git-lfs clean -- %f
