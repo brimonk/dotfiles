@@ -18,7 +18,7 @@ cat >> ${TMPFILE} << 'EOF'
 # free-format can allow for a little bit of organization here. After you save the file, whatever is
 # NOT prefixed with a '#' at the start of the line will be discarded.
 EOF
-printf "%s %s\n" $(date +'%Y-%m-%d %H:%M:%S') >> ${TMPFILE}
+printf "\n%s %s\n" $(date +'%Y-%m-%d %H:%M:%S') >> ${TMPFILE}
 echo "" >> ${TMPFILE}
 
 # edit the darn thing
