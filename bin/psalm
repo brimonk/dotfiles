@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Uses the KJV script to pull out and present a random psalm.
+
+IS_PRESENT=! $(which -s kjv)
+if [ $IS_PRESENT ]; then
+    CHAPTER=$(($RANDOM % 150 + 1))
+    kjv psalm $CHAPTER
+else
+    echo "Please get the 'kjv' script from lukesmith, found here: https://lukesmith.xyz/articles/command-line-bibles/"
+fi
