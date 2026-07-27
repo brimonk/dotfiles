@@ -308,7 +308,10 @@ function! CleanFile()
 endfunction
 
 " exec the local vimrc
-source $HOME/.vimrc_local
+let local_vimrc_path = $HOME + "/.vimrc_local"
+if filereadable(local_vimrc_path)
+    source local_vimrc_path
+endif
 
 " disable zig fmt
 let g:zig_fmt_autosave = 0
