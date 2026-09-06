@@ -43,6 +43,3 @@ function webserv {
 function notes {
 	$EDITOR $HOME/.notes
 }
-
-alias nethack='ssh nethack@alt.org'
-
