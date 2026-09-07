@@ -1,5 +1,32 @@
 OPTIONS=autopickup, pickup_types:$?!/="+
 OPTIONS=pettype=none
-OPTIONS=!tutorial
-OPTIONS=color
 OPTIONS=number_pad:2
+OPTIONS=boulder:0
+OPTIONS=symset:DECgraphics
+
+OPTIONS=showexp
+OPTIONS=time
+
+OPTIONS=!tutorial
+OPTIONS=!tips
+
+OPTIONS=color
+
+OPTIONS=menucolors
+MENUCOLOR="blessed"=green
+MENUCOLOR="holy"=green
+MENUCOLOR="unholy"=red
+MENUCOLOR="cursed"=red
+MENUCOLOR="uncursed"=white
+MENUCOLOR="Amulet of Yendor named"=magenta
+
+OPTIONS=statushilites
+OPTIONS=hitpointbar
+
+# HP
+OPTIONS=hilite_status:hitpoints/100%/green
+OPTIONS=hilite_status:hitpoints/<75%/lightgreen
+OPTIONS=hilite_status:hitpoints/<50%/yellow
+OPTIONS=hilite_status:hitpoints/<25%/red
+OPTIONS=hilite_status:hitpoints/<10%/red&bold
+OPTIONS=hilite_status:hitpoints-max/cyan
