@@ -1,14 +1,20 @@
+# AESTHETIC SETTINGS HERE
 OPTIONS=autopickup, pickup_types:$?!/="+
 OPTIONS=pettype=none
 OPTIONS=number_pad:2
-OPTIONS=boulder:0
+
 OPTIONS=symset:DECgraphics
+OPTIONS=boulder:0
+SYMBOLS=S_altar:_
+SYMBOLS=S_pool:}
 
 OPTIONS=showexp
 OPTIONS=time
 
 OPTIONS=!tutorial
 OPTIONS=!tips
+
+OPTIONS=fruit:veggie lasanga
 
 OPTIONS=color
 
@@ -30,3 +36,5 @@ OPTIONS=hilite_status:hitpoints/<50%/yellow
 OPTIONS=hilite_status:hitpoints/<25%/red
 OPTIONS=hilite_status:hitpoints/<10%/red&bold
 OPTIONS=hilite_status:hitpoints-max/cyan
+
+OPTIONS=hilite_status:characteristics/down/red/up/green
